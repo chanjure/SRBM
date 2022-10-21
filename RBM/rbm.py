@@ -16,31 +16,31 @@ from . import pdf
 from . import error
 
 class RBM():
-	"""Binomial Restricted Boltzmann Machine.
+  """Binomial Restricted Boltzmann Machine.
 
-	Core module of rbm package.
+  Core module of rbm package.
 
-	Attributes
-	----------
-	v : np.ndarray
-		Visible states
-	h : np.ndarray
-		Hidden states
-	pv : np.ndarray
-		Probability of visible state P(v|h)
-	ph : np.ndarray
-		Probability of hidden state P(h|v)
-	w : np.ndarray
-		Interaction matrix between visible state and hidden state
-	a : np.ndarray
-		External field for visible state
-	b : np.ndarray
-		External field for hidden state
-	history : dict
-		dictionary contaning training history.
-		ex : loss, likelyhood, w^2, d(w)
+  Attributes
+  ----------
+  v : np.ndarray
+    Visible states
+  h : np.ndarray
+    Hidden states
+  pv : np.ndarray
+    Probability of visible state P(v|h)
+  ph : np.ndarray
+    Probability of hidden state P(h|v)
+  w : np.ndarray
+    Interaction matrix between visible state and hidden state
+  a : np.ndarray
+    External field for visible state
+  b : np.ndarray
+    External field for hidden state
+  history : dict
+    dictionary contaning training history.
+    ex : loss, likelyhood, w^2, d(w)
 
-	"""
+  """
 
   v, h = None, None
   pv, ph = None, None
@@ -74,7 +74,7 @@ class RBM():
     self.h = np.zeros(n_h)
     self.ph = np.zeros(n_h)
 
-  def _initialize_weights(self, n_v, n_h)
+  def _initialize_weights(self, n_v, n_h):
     """Initializing
 
     Initializes weights
@@ -97,7 +97,7 @@ class RBM():
     self.a = np.zeros(n_v)
     self.b = -4.0 * np.ones(n_h)
 
-  def fit(self, x, lr, epoch)
+  def fit(self, x, lr, epoch):
     """fit
 
     Fit the model paramters
@@ -116,7 +116,7 @@ class RBM():
       Number of epochs
     """
 
-    typeErr(self.fit.__name__, x, np.ndarray)
+    error.typeErr(self.fit.__name__, x, np.ndarray)
 
     N = 1.*x.shape[0]
 
@@ -188,7 +188,7 @@ class RBM():
 
     return pv_k, v_k, ph_k, h_k
 
-  def _sample(self, x)
+  def _sample(self, x):
     """Sample
 
     Sampling methods
