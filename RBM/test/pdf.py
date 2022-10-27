@@ -51,7 +51,7 @@ def _negative_sigmoid(x):
 	exp = np.exp(x)
 	return exp / (exp + 1.)
 
-def sigmoid(x):
+def Sigmoid(x):
 	"""sigmoid
 
 	Stable sigmoid
@@ -77,3 +77,25 @@ def sigmoid(x):
 	result[negative] = _negative_sigmoid(x[negative])
 
 	return result
+
+def Gaussian(x, mean, sig):
+  """normal
+
+  Normal distribution centered at x and width sig.
+
+  Parameters
+  ----------
+  x : np.ndarray
+    actual sampled state
+  mean : np.ndarray
+    mean of Gaussian pdfs of each nodes
+  sig : float
+    Global std
+
+  Returns
+  -------
+  np.ndarray
+    element-wise Gaussian probability
+  """
+
+  return np.exp(-0.5 *(x - mean)*(x - mean)/(sig*sig))/(sig*np.sqrt(2.*np.pi))
