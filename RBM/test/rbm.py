@@ -115,7 +115,7 @@ class RBM(metaclass=abc.ABCMeta):
     self.a = np.zeros(n_v)
     self.b = -4.0 * np.ones(n_h)
 
-  def fit(self, x, lr, epoch, CDk=1):
+  def fit(self, x, lr, epoch, k=1):
     """fit
 
     Fit the model paramters
@@ -132,6 +132,8 @@ class RBM(metaclass=abc.ABCMeta):
       Learning rate
     epoch : int
       Number of epochs
+    k : int
+      Number of CD iterations
     """
 
     error.typeErr(self.fit.__name__, x, np.ndarray)
@@ -144,7 +146,7 @@ class RBM(metaclass=abc.ABCMeta):
       #print('h_data',h_data)
 
       # Expectation value from the Model
-      self.pv, self.v, self.ph, self.h = self._CDk(CDk,x)
+      self.pv, self.v, self.ph, self.h = self._CDk(k,x)
       v_model, h_model, vh_model = self._getGrad()
       #print('h_model',h_model)
 
@@ -217,8 +219,8 @@ class RBM(metaclass=abc.ABCMeta):
     h_k = np.mean(h_n, axis=0)
 
     if k > 1:
-      self.sig_v = np.std(v_k, axis=0)
-      self.sig_h = np.std(h_k, axis=0)
+      self.sig_v = np.mean(np.std(v_k, axis=0))
+      self.sig_h = np.mean(np.std(h_k, axis=0))
 
     return pv_k, v_k, ph_k, h_k
 
