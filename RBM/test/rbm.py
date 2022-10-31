@@ -54,6 +54,7 @@ class RBM(metaclass=abc.ABCMeta):
   w, a, b = None, None, None
   loss = 0.
   history = {}
+  outstr = ''
 
   def __setattr__(self, var, val):
     if hasattr(self, var):
@@ -158,8 +159,8 @@ class RBM(metaclass=abc.ABCMeta):
 
       # Print progress and generate history
       self.loss = self._error(x, self.v, "mse")
-      print(e, self.loss)
       self._historian()
+      print(e,self.outstr)
 
   @abc.abstractmethod
   def _historian(self):
@@ -170,7 +171,6 @@ class RBM(metaclass=abc.ABCMeta):
     """
     pass
 
-  @abc.abstractmethod
   def _getGrad(self, x=None):
     """_getGrad
 
@@ -181,7 +181,20 @@ class RBM(metaclass=abc.ABCMeta):
     x : np.ndarray
       Input data for positive gradient
     """
-    pass
+    N = 1.*self.v.shape[0]
+
+    if type(x) == np.ndarray:
+      v = np.mean(x, axis=0)
+      h = np.mean(self.ph, axis=0)
+      vh = (x.T @ self.ph) / N
+    elif type(x) == type(None):
+      v = np.mean(self.pv, axis=0)
+      h = np.mean(self.ph, axis=0)
+      vh = (self.pv.T @ self.ph) / N
+    else:
+      raise ValueError("Err (_getGrad) : Check input data x.")
+
+    return v, h, vh
 
   def _CDk(self, k, x):
     """Constrative Divergence k
@@ -271,7 +284,6 @@ class RBM(metaclass=abc.ABCMeta):
     else:
       raise ValueError("Err (_error) : No matching error function type.")
 
-  @abc.abstractmethod
   def reconstruct(self, x):
     """Reconstruct
 
@@ -286,7 +298,10 @@ class RBM(metaclass=abc.ABCMeta):
     x : np.ndarray
       Input pattern.
 		"""
-    pass
+    h, ph = self._sample(self.b + x @ self.w)
+    v, pv = self._sample(self.a + h @ self.w.T)
+
+    return pv, ph
 
 class BBRBM(RBM):
   """Binomial Restricted Boltzmann Machine.
@@ -304,24 +319,7 @@ class BBRBM(RBM):
   def _historian(self):
     self.history['loss'].append(self.loss)
     self.history['w'].append(self.w.copy())
-
-  def _getGrad(self, x = None):
-
-    N = 1.*self.v.shape[0]
-
-    if type(x) == np.ndarray:
-      v = np.mean(x, axis=0)
-      h = np.mean(self.ph, axis=0)
-      vh = (x.T @ self.ph) / N
-    elif type(x) == type(None):
-      v = np.mean(self.pv, axis=0)
-      h = np.mean(self.ph, axis=0)
-      vh = (self.pv.T @ self.ph) / N
-    else:
-      raise ValueError("Err (_getGrad) : Check input data x.")
-
-    return v, h, vh
-
+    self.outstr = 'loss : %.5f'%(self.loss)
 
   def _sample(self, x):
     # Bernoulli (or Binomial)
@@ -331,13 +329,6 @@ class BBRBM(RBM):
     state = np.random.binomial(1,proba)
     
     return state, proba
-
-  def reconstruct(self, x):
-
-    h, ph = self._sample(self.b + x @ self.w)
-    v, pv = self._sample(self.a + h @ self.w.T)
-
-    return pv, ph
 
 class GGRBM(RBM):
   """Gaussian Restricted Boltzmann Machine.
@@ -361,26 +352,8 @@ class GGRBM(RBM):
     self.history['w'].append(self.w.copy())
     self.history['sig_v'].append(self.sig_v)
     self.history['sig_h'].append(self.sig_h)
+    self.outstr = 'loss : %.5f sig_v : %.5f sig_h : %.5f'%(self.loss, self.sig_v, self.sig_h)
   
-  def _getGrad(self, x = None):
-
-    N = 1.*self.v.shape[0]
-
-    # Data expectation value
-    if type(x) == np.ndarray:
-      v = np.mean(x, axis=0)
-      h = np.mean(self.h, axis=0)
-      vh = (x.T @ self.h) / N
-    # Model expectation value
-    elif type(x) == type(None):
-      v = np.mean(self.v, axis=0)
-      h = np.mean(self.h, axis=0)
-      vh = (self.v.T @ self.h) / N
-    else:
-      raise ValueError("Err (_getGrad) : Check input data x.")
-
-    return v, h, vh
-
   def _sample(self, x):
 
     if x.shape[1] == self.n_v:
@@ -390,19 +363,8 @@ class GGRBM(RBM):
     else:
       raise ValueError(r"Err (_sample) : $\sigma$ is not properly set.")
 
-    mean = sig*sig*x
-
-    state = np.random.normal(loc=mean,scale=sig)
-    # One sigma probability - Could be better
-    #proba = pdf.Gaussian(state + 0.5*sig,mean,sig)*sig
-    proba = np.array([1.])
+    proba = sig*sig*x
+    state = np.random.normal(loc=proba,scale=sig)
 
     # Gaussian
     return state, proba
-
-  def reconstruct(self, x):
-
-    h, ph = self._sample(self.b + x @ self.w)
-    v, pv = self._sample(self.a + h @ self.w.T)
-
-    return v, h
