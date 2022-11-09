@@ -56,7 +56,7 @@ class RBM(metaclass=abc.ABCMeta):
   loss = 0.
   history = {}
   outstr = ''
-  name = 'RBM'
+  name = ''
 
   def __setattr__(self, var, val):
     """Set attr
@@ -102,6 +102,7 @@ class RBM(metaclass=abc.ABCMeta):
 
     # Get timetag for the model
     if load:
+      print("Loading model from "+name)
       mz = np.load(name)
       
       self.name=mz.name
@@ -120,6 +121,7 @@ class RBM(metaclass=abc.ABCMeta):
     else:
       time_tag = time.strftime("%y%m%d_%H%M", time.gmtime())
       self.name += name + '-' + time_tag
+      print("Initializing model "+self.name)
     
       self.n_v = n_v
       self.n_h = n_h
@@ -212,6 +214,50 @@ class RBM(metaclass=abc.ABCMeta):
 
     """
     pass
+
+  def painter(self, save=None):
+    """painter
+
+    Draw learning curve, svd of weight, learned pattern.
+
+    Parameters
+    ----------
+    save : str
+      figure directory
+    """
+
+    t = len(self.history['loss'])
+    fig, ax_l = plt.subplots()
+    
+    # Loss plot
+    ax_l.plot(np.arange(t), self.history['loss'], 'C3.-',\
+        label = 'loss %0.3f'%(self.history['loss'][-1]))
+    ax_l.set_xlabel('Epochs', fontsize=15)
+    ax_l.set_ylabel('Loss (rmse)', fontsize=15) # ('Loss (%s)')%([name of loss type])
+
+    # w svd mode plot
+    # Do svd
+    print("Doing SVD")
+    s_hist = np.zeros((t,self.n_h))
+    for i in range(t):
+      _, s, _ = np.linalg.svd(self.history['w'][i])
+      s_hist[i] = s.copy()
+    print("Done")
+
+    ax_a = ax_l.twinx()
+    for i in range(self.n_h):
+      ax_a.plot(np.arange(t), s_hist.T[i])
+    ax_a.set_ylabel(r'$\omega_{\alpha}$', fontsize=15)
+    
+    ax_l.grid(True)
+    ax_l.legend(loc='upper center')
+    fig.suptitle(self.name, fontsize=18)
+
+    if save:
+      fig.savefig(save+self.name+'.jpg', dpi=125)
+
+    plt.show()
+    plt.clf()
 
   def _getGrad(self, x=None):
     """_getGrad
@@ -373,8 +419,8 @@ class BBRBM(RBM):
   """Binomial Restricted Boltzmann Machine.
   """
 
-  def __init__(self, n_v, n_h):
-    super().__init__(n_v, n_h)  
+  def __init__(self, name, n_v, n_h, load=False):
+    super().__init__(name, n_v, n_h, load=False)  
 
   def _initialize_weights(self, n_v, n_h):
     super()._initialize_weights(n_v, n_h)
@@ -400,8 +446,8 @@ class GGRBM(RBM):
   """Gaussian Restricted Boltzmann Machine.
   """
   
-  def __init__(self, n_v, n_h, sig_v = 0.001, sig_h = 0.001):
-    super().__init__(n_v, n_h)
+  def __init__(self, name, n_v, n_h, sig_v = 0.001, sig_h = 0.001, load=False):
+    super().__init__(name, n_v, n_h, load=False)
     self.sig_v = sig_v
     self.sig_h = sig_h
     

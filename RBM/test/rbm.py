@@ -56,7 +56,7 @@ class RBM(metaclass=abc.ABCMeta):
   loss = 0.
   history = {}
   outstr = ''
-  name = 'RBM'
+  name = ''
 
   def __setattr__(self, var, val):
     """Set attr
@@ -373,8 +373,8 @@ class BBRBM(RBM):
   """Binomial Restricted Boltzmann Machine.
   """
 
-  def __init__(self, n_v, n_h):
-    super().__init__(n_v, n_h)  
+  def __init__(self, name, n_v, n_h, load=False):
+    super().__init__(name, n_v, n_h, load=False)  
 
   def _initialize_weights(self, n_v, n_h):
     super()._initialize_weights(n_v, n_h)
@@ -400,8 +400,8 @@ class GGRBM(RBM):
   """Gaussian Restricted Boltzmann Machine.
   """
   
-  def __init__(self, n_v, n_h, sig_v = 0.001, sig_h = 0.001):
-    super().__init__(n_v, n_h)
+  def __init__(self, name, n_v, n_h, sig_v = 0.001, sig_h = 0.001, load=False):
+    super().__init__(name, n_v, n_h, load=False)
     self.sig_v = sig_v
     self.sig_h = sig_h
     
