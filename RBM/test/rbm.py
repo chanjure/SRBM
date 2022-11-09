@@ -12,6 +12,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import abc
+import time
 
 from . import pdf
 from . import error
@@ -55,14 +56,19 @@ class RBM(metaclass=abc.ABCMeta):
   loss = 0.
   history = {}
   outstr = ''
+  name = 'RBM'
 
   def __setattr__(self, var, val):
+    """Set attr
+
+    Prevents setting new attributes
+    """
     if hasattr(self, var):
       super().__setattr__(var, val)
     else:
       raise AttributeError("Err (setattr) : Setting new attribute is forbiden.")
 
-  def __init__(self, n_v, n_h):
+  def __init__(self, name, n_v, n_h, load=False):
     """Initializing
 
     Initializes attributes
@@ -72,10 +78,15 @@ class RBM(metaclass=abc.ABCMeta):
 		
     Parameters
     ----------
+    name : str
+      Name of the model.
+      Or if load=True the path of the saved model.
     n_v : int
       Number of visible states.
     n_h : int
       Number of hidden states.
+    load : Bool
+      Load the saved model.
     mode : string
       Two letter mode of RBM.
       B : Bernoulli, G : Gaussian
@@ -83,15 +94,36 @@ class RBM(metaclass=abc.ABCMeta):
       Additional arguments.
 		"""
   
-    self.n_v = n_v
-    self.n_h = n_h
-    self._initialize_weights(n_v, n_h)
-
     self.v = np.zeros(n_v)
     self.pv = np.zeros(n_v)
 
     self.h = np.zeros(n_h)
-    self.ph = np.zeros(n_h)
+    self.ph = np.zeros(n_h)    
+
+    # Get timetag for the model
+    if load:
+      mz = np.load(name)
+      
+      self.name=mz.name
+      
+      self.n_v = mz.n_v
+      self.n_h = mz.n_h
+      self.w = mz.w
+      self.a = mz.a
+      self.b = mz.b
+      
+      self.sig_v = mz.sig_v
+      self.sig_h = mz.sig_h
+
+      self.history = mz.history
+
+    else:
+      time_tag = time.strftime("%y%m%d_%H%M", time.gmtime())
+      self.name += name + '-' + time_tag
+    
+      self.n_v = n_v
+      self.n_h = n_h
+      self._initialize_weights(n_v, n_h)
 
   def _initialize_weights(self, n_v, n_h):
     """Initializing
@@ -112,11 +144,19 @@ class RBM(metaclass=abc.ABCMeta):
       Number of hidden states.
 		"""
 
+    # Default init scheme
+    # For BBRBM
     self.w = np.random.normal(scale=0.01, size=(n_v,n_h))
     self.a = np.zeros(n_v)
     self.b = -4.0 * np.ones(n_h)
 
-  def fit(self, x, lr, epoch, k=1):
+    # Gauss init shceme
+    # For GGRBM
+    # self.w = np.random.normal(scale=0.01, size=(n_v,n_h))
+    # self.a = np.zeros(n_v)
+    # self.b = np.zeros(n_h)
+
+  def fit(self, x, lr, epoch, k=1, ds=False):
     """fit
 
     Fit the model paramters
@@ -135,6 +175,8 @@ class RBM(metaclass=abc.ABCMeta):
       Number of epochs
     k : int
       Number of CD iterations
+    ds : Bool
+      Dynamic sigma
     """
 
     error.typeErr(self.fit.__name__, x, np.ndarray)
@@ -147,7 +189,7 @@ class RBM(metaclass=abc.ABCMeta):
       #print('h_data',h_data)
 
       # Expectation value from the Model
-      self.pv, self.v, self.ph, self.h = self._CDk(k,x)
+      self.pv, self.v, self.ph, self.h = self._CDk(k,x,ds)
       v_model, h_model, vh_model = self._getGrad()
       #print('h_model',h_model)
 
@@ -196,7 +238,7 @@ class RBM(metaclass=abc.ABCMeta):
 
     return v, h, vh
 
-  def _CDk(self, k, x):
+  def _CDk(self, k, x, ds=False):
     """Constrative Divergence k
 
     Constrative Divergence using k steps of Gibbs sampling
@@ -210,6 +252,8 @@ class RBM(metaclass=abc.ABCMeta):
       Number of Gibbs sampling.
     x : np.ndarray
       Initial visible data.
+    ds : Bool
+      Dynamic sigma
 		"""
     pv_n = np.zeros((k,) + x.shape) # (Gibbs step, N data, n_v, 1)
     v_n = np.zeros((k,) + x.shape)
@@ -220,6 +264,7 @@ class RBM(metaclass=abc.ABCMeta):
     h_n[0], ph_n[0] = self._sample(self.b + v_n[0] @ self.w)
 
     # k Gibbs sampling
+    # This is sequential algorithm
     for i in range(1,k):
       v_n[i], pv_n[i] = self._sample(self.a + h_n[i-1] @ self.w.T)
       h_n[i], ph_n[i] = self._sample(self.b + v_n[i] @ self.w)
@@ -231,7 +276,7 @@ class RBM(metaclass=abc.ABCMeta):
     ph_k = np.mean(ph_n, axis=0)
     h_k = np.mean(h_n, axis=0)
 
-    if k > 1:
+    if k > 1 and ds:
       self.sig_v = np.mean(np.std(v_k, axis=0))
       self.sig_h = np.mean(np.std(h_k, axis=0))
 
@@ -302,6 +347,27 @@ class RBM(metaclass=abc.ABCMeta):
     v, pv = self._sample(self.a + h @ self.w.T)
 
     return pv, ph
+
+  def save(self, path='./'):
+    """save
+
+    Save model parameters
+
+    Note
+    ----
+    Save weight, bias, sigma as npz in path.
+		
+    Parameters
+    ----------
+    path : string
+      Path to save the model.
+		"""
+
+    np.savez(path+self.name+'.npz',\
+        name=self.name, n_v=self.n_v, n_h=self.n_h,\
+        w=self.w, a=self.a, b=self.b,\
+        sig_v=self.sig_v, sig_h=self.sig_h,\
+        history=self.history)
 
 class BBRBM(RBM):
   """Binomial Restricted Boltzmann Machine.
