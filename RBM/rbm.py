@@ -68,7 +68,7 @@ class RBM(metaclass=abc.ABCMeta):
     else:
       raise AttributeError("Err (setattr) : Setting new attribute is forbiden.")
 
-  def __init__(self, name, n_v, n_h, load=False):
+  def __init__(self, name, n_v, n_h, sig=0.01, load=False):
     """Initializing
 
     Initializes attributes
@@ -125,9 +125,9 @@ class RBM(metaclass=abc.ABCMeta):
     
       self.n_v = n_v
       self.n_h = n_h
-      self._initialize_weights(n_v, n_h)
+      self._initialize_weights(n_v, n_h, sig)
 
-  def _initialize_weights(self, n_v, n_h):
+  def _initialize_weights(self, n_v, n_h, sig=0.01):
     """Initializing
 
     Initializes weights
@@ -144,11 +144,13 @@ class RBM(metaclass=abc.ABCMeta):
       Number of visible states.
     n_h : int
       Number of hidden states.
+    sig : float
+      standard derivation of initial weight
 		"""
 
     # Default init scheme
     # For BBRBM
-    self.w = np.random.normal(scale=0.01, size=(n_v,n_h))
+    self.w = np.random.normal(scale=sig, size=(n_v,n_h))
     self.a = np.zeros(n_v)
     self.b = -4.0 * np.ones(n_h)
 
