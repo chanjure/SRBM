@@ -421,11 +421,11 @@ class BBRBM(RBM):
   """Binomial Restricted Boltzmann Machine.
   """
 
-  def __init__(self, name, n_v, n_h, load=False):
-    super().__init__(name, n_v, n_h, load=False)  
+  def __init__(self, name, n_v, n_h, sig=0.01, load=False):
+    super().__init__(name, n_v, n_h, sig=0.01, load=False)  
 
-  def _initialize_weights(self, n_v, n_h):
-    super()._initialize_weights(n_v, n_h)
+  def _initialize_weights(self, n_v, n_h, sig=0.01):
+    super()._initialize_weights(n_v, n_h, sig=0.01)
 
     self.history['loss'] = [] # MSE Loss 
     self.history['w'] = [] # weight matrix
