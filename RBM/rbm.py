@@ -28,6 +28,8 @@ class SRBM:
   ----------
   """
 
+  history = {}
+
   def __init__(self, n_v, n_h, k, \
 			fixed=None, init_cond=None, \
 			name='SRBM', load=False):
