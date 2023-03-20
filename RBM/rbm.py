@@ -199,7 +199,7 @@ class SRBM:
           self.m += lr*dm
 			
       self.loss = np.mean(loss_)
-      self.dw = dw.copy()
+      self.dw = dw
       self.outstr = "epoch :%d "%(epoch)
       self._historian()
 
