@@ -175,7 +175,7 @@ class SRBM:
     bias_term = F.linear(self.eta, phi_W)
     return (mass_term + kin_term + bias_term).mean()
 
-  def fit(train_dl, epoches, lr):
+  def fit(self, train_dl, epoches, lr):
     for epoch in range(epochs):
       loss_ = []
       for _, data in enumerate(train_dl):
