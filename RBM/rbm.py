@@ -18,6 +18,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 torch.set_default_tensor_type(torch.DoubleTensor) 
+torch.set_default_dtype(torch.float64)
 # Float in python is equal to double in C
 # https://docs.python.org/3/library/stdtypes.html
 
