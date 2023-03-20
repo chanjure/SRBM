@@ -23,7 +23,7 @@ torch.set_default_dtype(torch.float64)
 # Float in python is equal to double in C
 # https://docs.python.org/3/library/stdtypes.html
 
-class SRBM:
+class SRBM(nn.Module):
   """Scalar field Restricted Boltzmann Machine.
 
   Parameters
@@ -56,6 +56,7 @@ class SRBM:
     load : Bool
       Load the saved model.
 		"""
+    super(SRBM, self).__init__()
 
     self.history['loss'] = []
     self.history['w'] = []
