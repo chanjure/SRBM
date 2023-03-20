@@ -114,7 +114,7 @@ class SRBM:
     """
 
     # Default init scheme
-    self.w = nn.Parameter(torch.randn(n_h,n_v))
+    self.w = nn.Parameter(torch.randn(n_h,n_v)*1e-3)
 		
     if init_cond != None:
       mu = init_cond['m']
