@@ -88,7 +88,7 @@ class SRBM:
       self.n_h = n_h
       self.k = k
 
-      self._initialize_weights(n_v, n_h, fixed)
+      self._initialize_weights(n_v, n_h)
 
   def _initialize_weights(self, n_v, n_h):
     """Initializing
