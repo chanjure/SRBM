@@ -180,7 +180,7 @@ class SRBM:
     for epoch in range(epochs):
       loss_ = []
       for _, data in enumerate(train_dl):
-        data = Variable(data[0].view(-1,N))
+        data = Variable(data[0].view(-1,self.n_v))
 
         p_v, v_, _, _, v = self.forward(data)
         loss = self.free_energy(v) - self.free_energy(v_)
