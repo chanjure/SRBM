@@ -88,9 +88,9 @@ class SRBM:
       self.n_h = n_h
       self.k = k
 
-      self._initialize_weights(n_v, n_h)
+      self._initialize_weights(n_v, n_h, init_cond)
 
-  def _initialize_weights(self, n_v, n_h):
+  def _initialize_weights(self, n_v, n_h, init_cond=None):
     """Initializing
 
     Initializes weights
@@ -114,13 +114,19 @@ class SRBM:
     # Default init scheme
     self.w = nn.Parameter(torch.randn(n_h,n_v))
 		
-    mu = init_cond['m']
+    if init_cond != None:
+      mu = init_cond['m']
+    else:
+      mu = 1.
     self.m = nn.Parameter(mu*torch.ones(n_v))
 
     # self.eta = torch.randn(n_h)
     self.eta = nn.Parameter(torch.zeros(n_h))
 
-    self.sig = init_cond['sig']
+    if init_cond != None:
+      self.sig = init_cond['sig']
+    else:
+      self.sig = 1.
 
   def sample_from_p(self, p, std):
     return torch.normal(p, std)
