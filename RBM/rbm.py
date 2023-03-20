@@ -27,7 +27,7 @@ class SRBM:
   Parameters
   ----------
   """
-
+  name = ''
   history = {}
 
   def __init__(self, n_v, n_h, k, \
