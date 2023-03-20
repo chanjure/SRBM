@@ -113,7 +113,7 @@ class SRBM:
     self.w = nn.Parameter(torch.randn(n_h,n_v))
 		
     mu = init_cond['m']
-    self.m = nn.Parameter(mu*torch.ones(n_v)))
+    self.m = nn.Parameter(mu*torch.ones(n_v))
 
     # self.eta = torch.randn(n_h)
     self.eta = nn.Parameter(torch.zeros(n_h))
