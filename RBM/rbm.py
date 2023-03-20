@@ -57,7 +57,7 @@ class SRBM:
     self.history['w'] = []
     self.history['m'] = []
     self.history['eta'] = []
-		self.history['dw'] = []
+    self.history['dw'] = []
 
     # Get timetag for the model
     if load:
@@ -68,12 +68,12 @@ class SRBM:
       
       self.n_v = mz.n_v
       self.n_h = mz.n_h
-			self.k = k
+      self.k = k
 
       self.w = mz.w
       self.m = mz.mass
       self.eta = mz.eta
-			self.sig = mz.sig
+      self.sig = mz.sig
       
       self.history = mz.history
 
@@ -84,7 +84,7 @@ class SRBM:
     
       self.n_v = n_v
       self.n_h = n_h
-			self.k = k
+      self.k = k
 
       self._initialize_weights(n_v, n_h, fixed)
 
@@ -112,88 +112,88 @@ class SRBM:
     # Default init scheme
     self.w = nn.Parameter(torch.randn(n_h,n_v))
 		
-		mu = init_cond['m']
-		self.m = nn.Parameter(mu*torch.ones(n_v)))
+    mu = init_cond['m']
+    self.m = nn.Parameter(mu*torch.ones(n_v)))
 
-		# self.eta = torch.randn(n_h)
-		self.eta = nn.Parameter(torch.zeros(n_h))
+    # self.eta = torch.randn(n_h)
+    self.eta = nn.Parameter(torch.zeros(n_h))
 
-		self.sig = init_cond['sig']
+    self.sig = init_cond['sig']
 
-	def sample_from_p(self, p, std):
-		return torch.normal(p, std)
+  def sample_from_p(self, p, std):
+    return torch.normal(p, std)
 
-	def v_to_h(self, v):
-		p_h = F.linear(self.sig**2 * v, self.w, self.eta)
-		sample_h = self.sample_from_p(p_h, self.sig)
-		return p_h, sample_h
+  def v_to_h(self, v):
+    p_h = F.linear(self.sig**2 * v, self.w, self.eta)
+    sample_h = self.sample_from_p(p_h, self.sig)
+    return p_h, sample_h
 
-	def h_to_v(self, h):
-		p_v = F.linear(h, self.w.t())/self.m.pow(2)
-		sample_v = self.sample_from_p(p_v, 1./self.m)
-		return p_v, sample_v
+  def h_to_v(self, h):
+    p_v = F.linear(h, self.w.t())/self.m.pow(2)
+    sample_v = self.sample_from_p(p_v, 1./self.m)
+    return p_v, sample_v
 
-	def forward(self, v, k = None):
-		if k == None:
-			k = self.k
+  def forward(self, v, k = None):
+    if k == None:
+      k = self.k
 
-		p_h, h = self.v_to_h(v)
-		h_ = h
+    p_h, h = self.v_to_h(v)
+    h_ = h
 
-		for _ in range(k):
-			p_v_, v_ = self.h_to_v(h_)
-			p_h_, h_ = self.v_to_h(v_)
+    for _ in range(k):
+      p_v_, v_ = self.h_to_v(h_)
+      p_h_, h_ = self.v_to_h(v_)
 
-		return p_v_, v_, p_h_, h_, v
+    return p_v_, v_, p_h_, h_, v
 
-	def get_grad(self, v):
-		N = v.shape[0]
-		dw = (self.sig**2 * F.linear(F.linear(v, self.w).t(), v.t()))/N \
-				+ torch.einsum('ij,k->ikj', v, self.eta).mean(0)
+  def get_grad(self, v):
+    N = v.shape[0]
+    dw = (self.sig**2 * F.linear(F.linear(v, self.w).t(), v.t()))/N \
+        + torch.einsum('ij,k->ikj', v, self.eta).mean(0)
 		
-		#dm = (-v.pow(2)*self.mass).mean(0)
-		dm = 0.
-		#deta = F.linear(v, self.w).mean(0)
-		deta = 0.
+    #dm = (-v.pow(2)*self.mass).mean(0)
+    dm = 0.
+    #deta = F.linear(v, self.w).mean(0)
+    deta = 0.
 
-		return dw, deta, dm
+    return dw, deta, dm
 
-	def free_energy(self, v):
-		phi_W = F.linear(v, self.w)
-		
-		mass_term = -0.5*(v.pow(2)*self.m.pow(2)).sum(1)
-		kin_term = 0.5*self.sig**2 * phi_W.pow(2).sum(1)
-		bias_term = F.linear(self.eta, phi_W)
-		return (mass_term + kin_term + bias_term).mean()
+  def free_energy(self, v):
+    phi_W = F.linear(v, self.w)
 
-	def fit(train_dl, epoches, lr):
-		for epoch in range(epochs):
-			loss_ = []
-			for _, data in enumerate(train_dl):
-				data = Variable(data[0].view(-1,N))
+    mass_term = -0.5*(v.pow(2)*self.m.pow(2)).sum(1)
+    kin_term = 0.5*self.sig**2 * phi_W.pow(2).sum(1)
+    bias_term = F.linear(self.eta, phi_W)
+    return (mass_term + kin_term + bias_term).mean()
 
-				p_v, v_, _, _, v = self.forward(data)
-				loss = self.free_energy(v) - self.free_energy(v_)
-				loss_.append(loss.data)
+  def fit(train_dl, epoches, lr):
+    for epoch in range(epochs):
+      loss_ = []
+      for _, data in enumerate(train_dl):
+        data = Variable(data[0].view(-1,N))
 
-				with torch.no_grad():
-					dw_d, deta_d, dm_d = self.get_grad(v)
-					dw_m, deta_m, dm_m = self.get_grad(v_)
+        p_v, v_, _, _, v = self.forward(data)
+        loss = self.free_energy(v) - self.free_energy(v_)
+        loss_.append(loss.data)
 
-					dw = dw_d - dw_m
-					deta = deta_d - deta_m
-					dm = dm_d - dm_m
+        with torch.no_grad():
+          dw_d, deta_d, dm_d = self.get_grad(v)
+          dw_m, deta_m, dm_m = self.get_grad(v_)
 
-					self.w += lr*dw
-					self.eta += lr*deta
-					self.m += lr*dm
+          dw = dw_d - dw_m
+          deta = deta_d - deta_m
+          dm = dm_d - dm_m
+
+          self.w += lr*dw
+          self.eta += lr*deta
+          self.m += lr*dm
 			
-			self.loss = np.mean(loss_)
-			self.dw = dw.copy()
-			self.outstr = "epoch :%d "%(epoch)
-			self._historian()
+      self.loss = np.mean(loss_)
+      self.dw = dw.copy()
+      self.outstr = "epoch :%d "%(epoch)
+      self._historian()
 
-		return self.history
+    return self.history
 
   def painter(self, save=None):
     """painter
@@ -247,5 +247,5 @@ class SRBM:
     self.history['dw'].append(self.dw.data.numpy().copy())
     self.outstr += 'loss : %.5f'%(self.loss)
 
-		if verbose:
-			print(self.outstr)
+    if verbose:
+      print(self.outstr)
