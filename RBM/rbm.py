@@ -132,7 +132,7 @@ class SRBM(nn.Module):
     bias_term = F.linear(self.eta, phi_w)
     return (mass_term + kin_term + bias_term).mean()
 
-  def fit(self, train_dl, epochs, lr):
+  def fit(self, train_dl, epochs, lr, verbose=True):
     for epoch in range(epochs):
       loss_ = []
       for _, data in enumerate(train_dl):
@@ -157,7 +157,7 @@ class SRBM(nn.Module):
       self.loss = np.mean(loss_)
       self.dw = dw
       self.outstr = "epoch :%d "%(epoch)
-      self._historian()
+      self._historian(verbose)
 
     return self.history
 
