@@ -35,27 +35,6 @@ class SRBM(nn.Module):
   def __init__(self, n_v, n_h, k, \
 			fixed=None, init_cond=None, \
 			name='SRBM', load=False):
-    """Initializing
-
-    Initializes attributes
-
-    Note
-    ----
-		
-    Parameters
-    ----------
-    name : str
-      Name of the model.
-      Or if load=True the path of the saved model.
-    n_v : int
-      Number of visible states.
-    n_h : int
-      Number of hidden states.
-    sig_h : float
-      Width of the auxiliary states.
-    load : Bool
-      Load the saved model.
-		"""
     super(SRBM, self).__init__()
 
     self.history['loss'] = []
@@ -91,45 +70,22 @@ class SRBM(nn.Module):
       self.n_h = n_h
       self.k = k
 
-      self._initialize_weights(n_v, n_h, init_cond)
-
-  def _initialize_weights(self, n_v, n_h, init_cond=None):
-    """Initializing
-
-    Initializes weights
-
-    Note
-    ----
-    Different schemes may be chosen.
-
-    The following ones are from Hinton (2010).
-    
-    Parameters
-    ----------
-    n_v : int
-      Number of visible states.
-    n_h : int
-      Number of hidden states.
-    sig : float
-      standard derivation of initial weight
-    """
-
-    # Default init scheme
-    self.w = nn.Parameter(torch.randn(n_h,n_v)*1e-3)
+      # Default init scheme
+      self.w = nn.Parameter(torch.randn(n_h,n_v)*1e-1)
 		
-    if init_cond != None:
-      mu = init_cond['m']
-    else:
-      mu = 1.
-    self.m = nn.Parameter(mu*torch.ones(n_v))
+      if init_cond != None:
+        mu = init_cond['m']
+      else:
+        mu = 1.
+      self.m = nn.Parameter(mu*torch.ones(n_v))
 
-    # self.eta = torch.randn(n_h)
-    self.eta = nn.Parameter(torch.zeros(n_h))
+      # self.eta = torch.randn(n_h)
+      self.eta = nn.Parameter(torch.zeros(n_h))
 
-    if init_cond != None:
-      self.sig = init_cond['sig']
-    else:
-      self.sig = 1.
+      if init_cond != None:
+        self.sig = init_cond['sig']
+      else:
+        self.sig = 1.
 
   def sample_from_p(self, p, std):
     return torch.normal(p, std)
@@ -148,8 +104,7 @@ class SRBM(nn.Module):
     if k == None:
       k = self.k
 
-    p_h, h = self.v_to_h(v)
-    h_ = h
+    p_h_, h_ = self.v_to_h(v)
 
     for _ in range(k):
       p_v_, v_ = self.h_to_v(h_)
@@ -170,11 +125,11 @@ class SRBM(nn.Module):
     return dw, deta, dm
 
   def free_energy(self, v):
-    phi_W = F.linear(v, self.w)
+    phi_w = F.linear(v, self.w)
 
     mass_term = -0.5*(v.pow(2)*self.m.pow(2)).sum(1)
-    kin_term = 0.5*self.sig**2 * phi_W.pow(2).sum(1)
-    bias_term = F.linear(self.eta, phi_W)
+    kin_term = 0.5*self.sig**2 * phi_w.pow(2).sum(1)
+    bias_term = F.linear(self.eta, phi_w)
     return (mass_term + kin_term + bias_term).mean()
 
   def fit(self, train_dl, epochs, lr):
