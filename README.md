@@ -1,6 +1,6 @@
 # RBM
 ---
-** RBM Practice **
+** Scalar Field RBM **
 ---
 
 ## Update note
