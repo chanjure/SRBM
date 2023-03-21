@@ -62,7 +62,7 @@ class SRBM(nn.Module):
       self.history = mz.history
 
     else:
-      time_tag = time.strftime("%y%m%d_%H%M", time.gmtime())
+      time_tag = time.strftime("%y%m%d_%H%M%S", time.gmtime())
       self.name += name + '-' + time_tag
       print("Initializing model "+self.name)
     
@@ -131,6 +131,49 @@ class SRBM(nn.Module):
     kin_term = 0.5*self.sig**2 * phi_w.pow(2).sum(1)
     bias_term = F.linear(self.eta, phi_w)
     return (mass_term + kin_term + bias_term).mean()
+  
+  def unsup_fit(self, K_true, S, epochs, lr, batch_size=64, verbose=True):
+    data = torch.ones((batch_size, self.n_v))
+    for epoch in range(epochs):
+      loss_ = []
+      p_v, data, _, _, v = self.forward(data)
+      loss = self.free_energy(data) + S(data)
+      loss_.append(loss.data)
+
+      with torch.no_grad():
+        if epoch == 0:
+          K_inv = np.linalg.inv(K_true)
+          K_inv_tc = torch.DoubleTensor(K_inv)
+        
+        dw_d = self.w @ K_inv_tc
+        deta_d = 0.
+        #dm_d = -self.m*torch.trace(K_inv_tc)/self.n_v
+        dm_d = 0.
+        
+        dw_m, deta_m, dm_m = self.get_grad(data)
+
+        dw = dw_d - dw_m
+        deta = deta_d - deta_m
+        dm = dm_d - dm_m
+
+        self.w += lr*dw
+        self.eta += lr*deta
+        self.m += lr*dm
+    
+      self.loss = np.mean(loss_)
+      self.dw = dw
+      self.outstr = "epoch :%d "%(epoch)
+      if epoch % batch_size == 0:
+        if verbose:
+          ver_ = True
+        else:
+          ver_ = False
+        lr *= 0.99
+        self.outstr += 'lr: %.5f '%(lr)
+      self._historian(ver_)
+      ver_ = False
+
+    return self.history
 
   def fit(self, train_dl, epochs, lr, verbose=True):
     for epoch in range(epochs):
