@@ -136,7 +136,7 @@ class SRBM(nn.Module):
     bias_term = F.linear(self.eta, phi_w)
     return (mass_term + kin_term + bias_term).mean()
   
-  def unsup_fit(self, K_true, S, epochs, lr, batch_size=64, verbose=True):
+  def unsup_fit(self, K_true, S, epochs, lr, batch_size=64, verbose=True, lr_decay=True):
     data = torch.ones((batch_size, self.n_v))
     for epoch in range(epochs):
       loss_ = []
@@ -172,7 +172,10 @@ class SRBM(nn.Module):
           ver_ = True
         else:
           ver_ = False
-        lr *= 0.99
+
+        if lr_decay:
+          lr *= 0.99
+        
         self.outstr += 'lr: %.5f '%(lr)
       self._historian(ver_)
       ver_ = False
