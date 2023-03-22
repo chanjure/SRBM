@@ -71,7 +71,11 @@ class SRBM(nn.Module):
       self.k = k
 
       # Default init scheme
-      self.w = nn.Parameter(torch.randn(n_h,n_v)*1e-1)
+      try:
+        w = init_cond['w']
+        self.w = nn.Parameter(w)
+      except:
+        self.w = nn.Parameter(torch.randn(n_h,n_v)*1e-1)
 		
       if init_cond != None:
         mu = init_cond['m']
