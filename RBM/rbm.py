@@ -42,6 +42,7 @@ class SRBM(nn.Module):
     self.history['m'] = []
     self.history['eta'] = []
     self.history['dw'] = []
+    self.history['dm'] = []
 
     # Get timetag for the model
     if load:
@@ -77,10 +78,16 @@ class SRBM(nn.Module):
       except:
         self.w = nn.Parameter(torch.randn(n_h,n_v)*1e-1)
 		
-      if init_cond != None:
+      try:
         mu = init_cond['m']
-      else:
+      except:
         mu = 1.
+
+      try:
+        self.m_scheme = init_cond['m_scheme']
+      except:
+        self.m_scheme = 0
+  
       self.m = nn.Parameter(mu*torch.ones(n_v))
 
       # self.eta = torch.randn(n_h)
@@ -121,10 +128,15 @@ class SRBM(nn.Module):
     dw = (self.sig**2 * F.linear(F.linear(v, self.w).t(), v.t()))/N \
         + torch.einsum('ij,k->ikj', v, self.eta).mean(0)
 		
-    #dm = (-v.pow(2)*self.mass).mean(0)
-    dm = 0.
+    if self.m_scheme == 'local':
+      dm = (-v.pow(2)*self.m).mean(0)
+    elif self.m_scheme == 'global':
+      dm = -self.m*(v.pow(2).sum(1)).mean(0)
+    else:
+      dm = torch.zeros(self.n_v)
+
     #deta = F.linear(v, self.w).mean(0)
-    deta = 0.
+    deta = torch.zeros(self.n_v)
 
     return dw, deta, dm
 
@@ -150,9 +162,14 @@ class SRBM(nn.Module):
           K_inv_tc = torch.DoubleTensor(K_inv)
         
         dw_d = self.w @ K_inv_tc
-        deta_d = 0.
-        #dm_d = -self.m*torch.trace(K_inv_tc)/self.n_v
-        dm_d = 0.
+        deta_d = torch.zeros(self.n_v)
+
+        if self.m_scheme == 'local':
+          dm_d = -F.linear(self.m, K_inv_tc)
+        elif self.m_scheme == 'global':
+          dm_d = -self.m*torch.trace(K_inv_tc)
+        else:
+          dm_d = torch.zeros(self.n_v)
         
         dw_m, deta_m, dm_m = self.get_grad(data)
 
@@ -166,6 +183,7 @@ class SRBM(nn.Module):
     
       self.loss = np.mean(loss_)
       self.dw = dw
+      self.dm = dm
       self.outstr = "epoch :%d "%(epoch)
       if epoch % batch_size == 0:
         if verbose:
@@ -206,6 +224,7 @@ class SRBM(nn.Module):
 			
       self.loss = np.mean(loss_)
       self.dw = dw
+      self.dm = dm
       self.outstr = "epoch :%d "%(epoch)
       self._historian(verbose)
 
@@ -261,6 +280,7 @@ class SRBM(nn.Module):
     self.history['m'].append(self.m.data.numpy().copy())
     self.history['eta'].append(self.eta.data.numpy().copy())
     self.history['dw'].append(self.dw.data.numpy().copy())
+    self.history['dm'].append(self.dm.data.numpy().copy())
     self.outstr += 'loss : %.5f'%(self.loss)
 
     if verbose:
