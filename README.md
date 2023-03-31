@@ -4,15 +4,19 @@
 ---
 
 ## Usage
-run 
+run:
+
   $ bash bin/run_train.sh
+
 to run a sample training.
 Resulting images are created into images/
 
 for interactive example of using SRBM and setting hyperparameters, see notebook/SRBM_unsup_gen.
 
-After modifying notebook example, use 
+After modifying notebook example, use:
+
   $ bash bin/run_check.sh
+
 before uploading to git
 
 ## TODO
