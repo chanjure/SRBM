@@ -153,7 +153,7 @@ class SRBM(nn.Module):
     for epoch in range(epochs):
       loss_ = []
       p_v, data, _, _, v = self.forward(data)
-      loss = self.free_energy(data) + S(data)
+      loss = self.free_energy(data) + S(data, self.m)
       loss_.append(loss.data)
 
       with torch.no_grad():
