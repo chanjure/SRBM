@@ -3,19 +3,12 @@
 ** Scalar Field RBM **
 ---
 
-## Update note
-
-
-## Installation
-```
-
-```
-
-
 ## Usage
-```
-See scripts for examples
-```
+run 
+  $ bash bin/run_train.sh
+to run a sample training.
+
+for interactive example of using SRBM and setting hyperparameters, see notebook/SRBM_unsup_gen.
 
 ## TODO
 
