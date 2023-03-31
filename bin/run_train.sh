@@ -1,3 +1,3 @@
 mkdir images
 mkdir models
-python scripts/train.py
+python bin/train.py
