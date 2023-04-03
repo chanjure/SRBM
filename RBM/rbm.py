@@ -43,6 +43,8 @@ class SRBM(nn.Module):
     self.history['eta'] = []
     self.history['dw'] = []
     self.history['dm'] = []
+    self.history['S'] = []
+    self.history['S_std'] = []
 
     # Get timetag for the model
     if load:
@@ -153,7 +155,9 @@ class SRBM(nn.Module):
     for epoch in range(epochs):
       loss_ = []
       p_v, data, _, _, v = self.forward(data)
-      loss = self.free_energy(data) + S(data, self.m)
+
+      #loss = self.free_energy(data) + S(data, 2.).mean()
+      loss = -S(data, 2.).mean()
       loss_.append(loss.data)
 
       with torch.no_grad():
@@ -194,7 +198,9 @@ class SRBM(nn.Module):
         if lr_decay:
           lr *= lr_decay
         
-        self.outstr += 'lr: %.5f '%(lr)
+        self.outstr += 'lr: %.5f '%(lr)  
+      
+      self.history['S'].append(S(data, 2.).data.numpy())
       self._historian(ver_)
       ver_ = False
 
