@@ -29,6 +29,10 @@ For conda users, use:
   
   $ conda env create -f environment.yml -n qftml
 
+or for pip users,
+  
+  $ python -m pip install -r requirements.txt
+
 to setup the environment
 
 ## TODO
