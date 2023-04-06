@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import os, sys
 sys.path.append('../')
 
-import SRBM
+from SRBM.RBM import rbm
 
 plot_dir = 'images/'
 model_dir = 'models/'
@@ -59,7 +59,8 @@ def main():
     init_cond = {'m':3., 'sig':1., 'm_scheme':0}
 
     # Initialize SRBM
-    rbm = SRBM.RBM.SRBM(n_v=N, n_h=N, k=10, init_cond=init_cond)
+    #rbm = SRBM.RBM.SRBM(n_v=N, n_h=N, k=10, init_cond=init_cond)
+    model = rbm.SRBM(n_v=N, n_h=N, k=10, init_cond=init_cond)
 
     # Training parameters
     lr = 1e-1
@@ -71,7 +72,7 @@ def main():
     init_field = torch.ones((batch_size, N), dtype=torch.double)
 
     # Train the model
-    history = rbm.unsup_fit(K_phi, S_fast, \
+    history = model.unsup_fit(K_phi, S_fast, \
             epochs=epochs, lr=lr, batch_size=batch_size, \
             verbose=True, lr_decay=0.99)
     
@@ -81,7 +82,7 @@ def main():
     plt.title('KL')
     plt.xlabel('epoch')
     plt.ylabel(r'$\mathcal{L}$')
-    plt.savefig(plot_dir+rbm.name+'_lc.pdf')
+    plt.savefig(plot_dir+model.name+'_lc.pdf')
     
     # Gradient
     plt.plot(np.arange(len(history['dw'])), \
@@ -97,12 +98,12 @@ def main():
     plt.xlabel('epoch')
     plt.ylabel(r'$\frac{d L}{dw}$')
     plt.legend()
-    plt.savefig(plot_dir+rbm.name+'_lc.pdf')
+    plt.savefig(plot_dir+model.name+'_lc.pdf')
 
     # Reconstructed action distribution
     n_samples = 1000
     recon_field = torch.ones((n_samples, N))
-    v_pred, v_, h_pred, _, v = rbm.forward(recon_field,n_samples)
+    v_pred, v_, h_pred, _, v = model.forward(recon_field,n_samples)
     n_samples = len(v)
 
     S_pred = np.zeros(n_samples)
@@ -111,7 +112,7 @@ def main():
 
     for i in range(n_samples):
         S_pred[i] = S(v_.data.numpy()[i],M)
-        S_K[i] = -rbm.free_energy(v_[i:i+1]).data.numpy()/N
+        S_K[i] = -model.free_energy(v_[i:i+1]).data.numpy()/N
 
     plt.hist(S_K, bins=50, density=True, \
             color='C2', label='Model', alpha=0.8)
@@ -120,7 +121,7 @@ def main():
 
     plt.legend()
     plt.title('Action histogram')
-    plt.savefig(plot_dir+rbm.name+'_S.pdf')
+    plt.savefig(plot_dir+model.name+'_S.pdf')
 
     # SVD of coupling matrix squared
     s_hist = np.zeros((epochs,N))
@@ -133,7 +134,7 @@ def main():
     plt.xlabel('epoch')
     plt.ylabel(r'$w_{\alpha}^2$')
     plt.title(r'$w^2$ evolution')
-    plt.savefig(plot_dir+rbm.name+'_w.pdf')
+    plt.savefig(plot_dir+model.name+'_w.pdf')
 
     # Last few steps
     plt.plot(np.arange(epochs)[-10:],s_hist[-10:]**2, '.-')
@@ -141,7 +142,7 @@ def main():
     plt.xlabel('epoch')
     plt.ylabel(r'$w_{\alpha}^2$')
     plt.title(r'$w^2$ evolution')
-    plt.savefig(plot_dir+rbm.name+'_w_last.pdf')
+    plt.savefig(plot_dir+model.name+'_w_last.pdf')
 
     # Kernel SVD values
     s_hist = np.zeros((epochs,N))
@@ -149,7 +150,7 @@ def main():
 
     for i in range(epochs):
         WW_ = history['w'][i].T@history['w'][i]
-        K_ = -rbm.sig**2 * WW_ + np.diag(history['m'][i]**2)
+        K_ = -model.sig**2 * WW_ + np.diag(history['m'][i]**2)
         if i ==0:
             K_i = K_.copy()
         s_ = np.sort(np.linalg.eigvals(K_))
@@ -160,7 +161,7 @@ def main():
     plt.xlabel('epoch')
     plt.ylabel(r'$K_{\alpha}$')
     plt.title('K eigenvalue')
-    plt.savefig(plot_dir+rbm.name+'_K.pdf')
+    plt.savefig(plot_dir+model.name+'_K.pdf')
 
     # Last few steps
     plt.plot(np.arange(epochs)[-10:],s_hist[-10:], '.-')
@@ -168,7 +169,7 @@ def main():
     plt.xlabel('epoch')
     plt.ylabel(r'$K_{\alpha}$')
     plt.title('K eigenvalue')
-    plt.savefig(plot_dir+rbm.name+'_K_last.pdf')
+    plt.savefig(plot_dir+model.name+'_K_last.pdf')
 
     # Mass parameter of the model
     plt.plot(np.arange(len(history['m'])),history['m'])
@@ -179,7 +180,7 @@ def main():
     plt.ylabel('mass')
     plt.legend()
     plt.grid(True)
-    plt.savefig(plot_dir+rbm.name+'_mass.pdf')
+    plt.savefig(plot_dir+model.name+'_mass.pdf')
 
     # Last few steps
     plt.plot(np.arange(len(history['m']))[-10:],history['m'][-10:], '.-')
@@ -187,32 +188,32 @@ def main():
     plt.xlabel('epoch')
     plt.ylabel('mass')
     plt.grid(True)
-    plt.savefig(plot_dir+rbm.name+'_mass_last.pdf')
+    plt.savefig(plot_dir+model.name+'_mass_last.pdf')
 
     # K_rbm off diagonal part
-    Kin = (-rbm.sig**2 * (rbm.w.t() @ rbm.w)).data.numpy()
-    Mss = np.diag((rbm.m**2).data.numpy())
+    Kin = (-model.sig**2 * (model.w.t() @ model.w)).data.numpy()
+    Mss = np.diag((model.m**2).data.numpy())
     K = Kin + Mss
 
     K_off = K - np.diag(np.diag(K))
     plt.imshow(K_off, cmap='gray', vmax=K_off.max(), vmin=K_off.min())
     plt.colorbar()
     plt.title('K off diagonal')
-    plt.savefig(plot_dir+rbm.name+'_K_offdiagonal.pdf')
+    plt.savefig(plot_dir+model.name+'_K_offdiagonal.pdf')
 
     # Coupling matrix as image
-    w_rbm = rbm.w.data.numpy()
+    w_rbm = model.w.data.numpy()
     plt.imshow(w_rbm, cmap='gray')
     plt.colorbar()
     plt.title('RBM coupling matrix')
-    plt.savefig(plot_dir+rbm.name+'_W_img.pdf')
+    plt.savefig(plot_dir+model.name+'_W_img.pdf')
 
     # Coupling matrix off-diagonal
-    w_rbm = rbm.w.data.numpy()
+    w_rbm = model.w.data.numpy()
     plt.imshow(w_rbm - np.diag(np.diag(w_rbm)), cmap='gray')
     plt.colorbar()
     plt.title('W off-diagonal part')
-    plt.savefig(plot_dir+rbm.name+'_W_offdiagonal.pdf')
+    plt.savefig(plot_dir+model.name+'_W_offdiagonal.pdf')
 
 if __name__ == '__main__':
     main()
