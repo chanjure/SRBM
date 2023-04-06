@@ -15,11 +15,16 @@ Resulting images are created into images/
 
 for interactive example of using SRBM and setting hyperparameters, see notebook/SRBM_unsup_gen.
 
-Before uploading to git, run
+Before uploading to git, run:
 
   $ bash bin/run_check.sh
 
 To run pytest and test notebook.
+
+Or for automated push, run:
+
+  $ bash bin/git_push.sh <comment>
+
 
 ## TODO
 
