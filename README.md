@@ -1,6 +1,6 @@
 # RBM
 ---
-** Scalar Field RBM **
+**Scalar Field RBM**
 ---
 
 ## Usage
@@ -13,11 +13,11 @@ Resulting images are created into images/
 
 for interactive example of using SRBM and setting hyperparameters, see notebook/SRBM_unsup_gen.
 
-After modifying notebook example, use:
+Before uploading to git, run
 
   $ bash bin/run_check.sh
 
-before uploading to git
+To run pytest and test notebook.
 
 ## TODO
 
