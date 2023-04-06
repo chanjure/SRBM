@@ -1,1 +1,1 @@
-conda env export --no-builds > environment.yml
+pipreqs --force .
