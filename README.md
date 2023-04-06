@@ -25,6 +25,11 @@ Or for automated push, run:
 
   $ bash bin/git_push.sh <comment>
 
+For conda users, use:
+  
+  $ conda env create -f environment.yml -n qftml
+
+to setup the environment
 
 ## TODO
 
