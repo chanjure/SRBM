@@ -3,6 +3,8 @@
 **Scalar Field RBM**
 ---
 
+[![Run tests](https://github.com/chanjure/SRBM/actions/workflows/pytest.yaml/badge.svg)](https://github.com/chanjure/SRBM/actions/workflows/pytest.yaml)
+
 ## Usage
 run:
 
