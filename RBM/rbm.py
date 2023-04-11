@@ -139,7 +139,7 @@ class SRBM(nn.Module):
       dm = torch.zeros(self.n_v)
 
     #deta = F.linear(v, self.w).mean(0)
-    deta = torch.zeros(self.n_v)
+    deta = torch.zeros(self.n_h)
 
     return dw, deta, dm
 
@@ -167,7 +167,7 @@ class SRBM(nn.Module):
           K_inv = torch.linalg.inv(K_true)
         
         dw_d = self.w @ K_inv
-        deta_d = torch.zeros(self.n_v)
+        deta_d = torch.zeros(self.n_h)
 
         if self.m_scheme == 'local':
           dm_d = -F.linear(self.m, K_inv)
