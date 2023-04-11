@@ -161,10 +161,12 @@ class SRBM(nn.Module):
       #loss = -S(data, 2.).mean()
       # rev KL = -S_rbm + S_true - constant
       #        = free_energy + phi K_true phi
-      loss = self.free_energy(data) + 0.5* torch.trace(data @ K_true @ data.t())/batch_size/self.n_v
-      loss_.append(loss.data)
 
       with torch.no_grad():
+        S_density = 0.5* torch.trace(data @ K_true @ data.t())/batch_size/self.n_v
+        loss = self.free_energy(data) + S_density
+        loss_.append(loss.data)
+      
         if epoch == 0:
           K_inv = torch.linalg.inv(K_true)
         
@@ -203,7 +205,7 @@ class SRBM(nn.Module):
         
         self.outstr += 'lr: %.5f '%(lr)  
       
-      self.history['S'].append(S(data, 2.).data.numpy())
+      self.history['S'].append(S_density.data.numpy())
       self._historian(ver_)
       ver_ = False
 
