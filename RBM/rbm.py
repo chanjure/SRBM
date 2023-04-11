@@ -149,7 +149,7 @@ class SRBM(nn.Module):
     mass_term = -0.5*(v.pow(2)*self.m.pow(2)).sum(1)
     kin_term = 0.5*self.sig**2 * phi_w.pow(2).sum(1)
     bias_term = F.linear(self.eta, phi_w)
-    return (mass_term + kin_term + bias_term).mean()
+    return (mass_term + kin_term + bias_term).mean()/self.n_v
   
   def unsup_fit(self, K_true, S, epochs, lr, batch_size=64, verbose=True, lr_decay=0):
     data = torch.ones((batch_size, self.n_v))
@@ -159,7 +159,9 @@ class SRBM(nn.Module):
 
       #loss = self.free_energy(data) + S(data, 2.).mean()
       #loss = -S(data, 2.).mean()
-      loss = - torch.trace(data @ K_true @ data.t())/batch_size
+      # rev KL = -S_rbm + S_true - constant
+      #        = free_energy + phi K_true phi
+      loss = self.free_energy(data) + 0.5* torch.trace(data @ K_true @ data.t())/batch_size/self.n_v
       loss_.append(loss.data)
 
       with torch.no_grad():
