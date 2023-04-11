@@ -87,7 +87,9 @@ def test_scale():
 
     init_field = torch.ones((batch_size, N), dtype=torch.double)
 
-    history = rbm.unsup_fit(K_phi, S_fast,\
+    K_phi_tc = torch.DoubleTensor(K_phi)
+
+    history = rbm.unsup_fit(K_phi_tc, S_fast,\
             epochs=epochs, lr=lr, batch_size=batch_size,\
             verbose=True, lr_decay=0.99)
 

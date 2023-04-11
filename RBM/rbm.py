@@ -157,7 +157,8 @@ class SRBM(nn.Module):
       p_v, data, _, _, v = self.forward(data)
 
       #loss = self.free_energy(data) + S(data, 2.).mean()
-      loss = -S(data, 2.).mean()
+      #loss = -S(data, 2.).mean()
+      loss = - torch.trace(data @ K_true @ data.t())/batch_size
       loss_.append(loss.data)
 
       with torch.no_grad():
