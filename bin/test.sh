@@ -1,1 +1,2 @@
 pytest -v 
+rm *.npz

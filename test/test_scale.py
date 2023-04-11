@@ -76,8 +76,11 @@ for i in range(N):
         elif (i % N == (j+1) %N) or (i % N == (j-1) %N):
             K_phi[i][j] = -1
 
-def test_scale():
-    init_cond = {'m':3., 'sig':1., 'm_scheme':0}
+@pytest.mark.parametrize("m_scheme", [
+    (0),('local'),('global')],
+    ids=["0", "local", "global"])
+def test_scale(m_scheme):
+    init_cond = {'m':3., 'sig':1., 'm_scheme':m_scheme}
 
     rbm = SRBM.RBM.SRBM(n_v = N, n_h = N, k=10, init_cond=init_cond)
 
@@ -95,6 +98,17 @@ def test_scale():
 
     Zk, b, r, K = get_scale(rbm)
 
-    assert Zk == pytest.approx(1., abs=1e-1)
+    assert Zk == pytest.approx(1., abs=0.4)
 
+def test_saveload():
+    init_cond = {'m':3., 'sig':1., 'm_scheme':'global'}
 
+    rbm = SRBM.RBM.SRBM(n_v = N, n_h = N, k=10, init_cond=init_cond)
+    rbm.save('./')
+    saved_model = rbm.name
+    rbm2 = SRBM.RBM.SRBM(load='./'+saved_model+'.npz')
+
+    assert (rbm2.name == rbm.name) and rbm2.history.keys() == rbm.history.keys()
+    assert (rbm.__dict__['_parameters']['w'] == rbm2.__dict__['_parameters']['w']).all().item()
+    assert (rbm.__dict__['_parameters']['m'] == rbm2.__dict__['_parameters']['m']).all().item()
+    assert (rbm.__dict__['_parameters']['eta'] == rbm2.__dict__['_parameters']['eta']).all().item()

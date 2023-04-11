@@ -32,7 +32,7 @@ class SRBM(nn.Module):
   name = ''
   history = {}
 
-  def __init__(self, n_v, n_h, k, \
+  def __init__(self, n_v=None, n_h=None, k=None, \
 			fixed=None, init_cond=None, \
 			name='SRBM', load=False):
     super(SRBM, self).__init__()
@@ -48,21 +48,22 @@ class SRBM(nn.Module):
 
     # Get timetag for the model
     if load:
-      print("Loading model from "+name)
-      mz = np.load(name)
+      print("Loading model from "+load)
+      mz = np.load(load, allow_pickle=True)
       
-      self.name=mz.name
-      
-      self.n_v = mz.n_v
-      self.n_h = mz.n_h
-      self.k = k
+      self.name=mz['name'].item()
 
-      self.w = mz.w
-      self.m = mz.mass
-      self.eta = mz.eta
-      self.sig = mz.sig
+      self.n_v = mz['n_v'].item()
+      self.n_h = mz['n_h'].item()
+      self.k = mz['k'].item()
+
+      self.w = nn.Parameter(torch.DoubleTensor(mz['w']))
+      self.m = nn.Parameter(torch.DoubleTensor(mz['m']))
+      self.eta = nn.Parameter(torch.DoubleTensor(mz['eta']))
+      self.sig = mz['sig'].item()
       
-      self.history = mz.history
+      self.m_scheme = mz['m_scheme'].item()
+      self.history = mz['history'].item()
 
     else:
       time_tag = time.strftime("%y%m%d_%H%M%S", time.gmtime())
@@ -163,16 +164,15 @@ class SRBM(nn.Module):
 
       with torch.no_grad():
         if epoch == 0:
-          K_inv = np.linalg.inv(K_true)
-          K_inv_tc = torch.DoubleTensor(K_inv)
+          K_inv = torch.linalg.inv(K_true)
         
-        dw_d = self.w @ K_inv_tc
+        dw_d = self.w @ K_inv
         deta_d = torch.zeros(self.n_v)
 
         if self.m_scheme == 'local':
-          dm_d = -F.linear(self.m, K_inv_tc)
+          dm_d = -F.linear(self.m, K_inv)
         elif self.m_scheme == 'global':
-          dm_d = -self.m*torch.trace(K_inv_tc)
+          dm_d = -self.m*torch.trace(K_inv)
         else:
           dm_d = torch.zeros(self.n_v)
         
@@ -292,3 +292,8 @@ class SRBM(nn.Module):
 
     if verbose:
       print(self.outstr)
+
+  def save(self, fpath):
+    np.savez(fpath+'/'+self.name+'.npz', name=self.name, n_v=self.n_v, n_h=self.n_h, k=self.k,\
+            w=self.w.data.numpy(), m=self.m.data.numpy(), eta=self.eta.data.numpy(),\
+            sig=self.sig, m_scheme=self.m_scheme, history=self.history, allow_pickle=True)

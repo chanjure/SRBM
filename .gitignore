@@ -1,6 +1,7 @@
 *.swp
 .ipynb_checkpoints
 .pytest_cache
+.coverage
 __pycache__
 images
 models
