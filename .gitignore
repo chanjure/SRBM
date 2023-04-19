@@ -6,3 +6,7 @@ __pycache__
 images
 models
 htmlcov
+.npy
+.jpg
+.csv
+.tar.gz

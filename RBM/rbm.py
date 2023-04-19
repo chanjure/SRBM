@@ -218,7 +218,8 @@ class SRBM(nn.Module):
         data = Variable(data[0].view(-1,self.n_v))
 
         p_v, v_, _, _, v = self.forward(data)
-        loss = self.free_energy(v) - self.free_energy(v_)
+        S_density = self.free_energy(v_)
+        loss = self.free_energy(v) - S_density
         loss_.append(loss.data)
 
         with torch.no_grad():
@@ -237,7 +238,20 @@ class SRBM(nn.Module):
       self.dw = dw
       self.dm = dm
       self.outstr = "epoch :%d "%(epoch)
-      self._historian(verbose)
+      if epoch % batch_size == 0:
+        if verbose:
+          ver_ = True
+        else:
+          ver_ = False
+
+        if lr_decay:
+          lr *= lr_decay
+        
+        self.outstr += 'lr: %.5f '%(lr)  
+      
+      self.history['S'].append(S_density.data.numpy())
+      self._historian(ver_)
+      ver_ = False
 
     return self.history
 
