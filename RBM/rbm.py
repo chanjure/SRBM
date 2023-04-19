@@ -76,10 +76,15 @@ class SRBM(nn.Module):
 
       # Default init scheme
       try:
+        w_sig = init_cond['w_sig']
+      except:
+        w_sig = 0.1
+
+      try:
         w = init_cond['w']
         self.w = nn.Parameter(w)
       except:
-        self.w = nn.Parameter(torch.randn(n_h,n_v)*1e-1)
+        self.w = nn.Parameter(torch.randn(n_h,n_v)*w_sig)
 		
       try:
         mu = init_cond['m']
@@ -211,7 +216,7 @@ class SRBM(nn.Module):
 
     return self.history
 
-  def fit(self, train_dl, epochs, lr, verbose=True):
+  def fit(self, train_dl, epochs, lr, verbose=True, lr_decay=0):
     for epoch in range(epochs):
       loss_ = []
       for _, data in enumerate(train_dl):
@@ -233,11 +238,15 @@ class SRBM(nn.Module):
           self.w += lr*dw
           self.eta += lr*deta
           self.m += lr*dm
-			
+        
+      if lr_decay:
+        lr *= lr_decay
+            
       self.loss = np.mean(loss_)
       self.dw = dw
       self.dm = dm
       self.outstr = "epoch :%d "%(epoch)
+      self.outstr += 'lr: %.5f '%(lr)  
       self.history['S'].append(S_density.data.numpy())
       self._historian(verbose)
 
