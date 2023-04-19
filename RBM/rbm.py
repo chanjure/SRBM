@@ -238,20 +238,8 @@ class SRBM(nn.Module):
       self.dw = dw
       self.dm = dm
       self.outstr = "epoch :%d "%(epoch)
-      if epoch % batch_size == 0:
-        if verbose:
-          ver_ = True
-        else:
-          ver_ = False
-
-        if lr_decay:
-          lr *= lr_decay
-        
-        self.outstr += 'lr: %.5f '%(lr)  
-      
       self.history['S'].append(S_density.data.numpy())
-      self._historian(ver_)
-      ver_ = False
+      self._historian(verbose)
 
     return self.history
 
