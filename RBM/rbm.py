@@ -23,6 +23,7 @@ torch.set_default_dtype(torch.float64)
 # Float in python is equal to double in C
 # https://docs.python.org/3/library/stdtypes.html
 
+
 class SRBM(nn.Module):
   """Scalar field Restricted Boltzmann Machine.
 
@@ -36,6 +37,9 @@ class SRBM(nn.Module):
 			fixed=None, init_cond=None, \
 			name='SRBM', load=False):
     super(SRBM, self).__init__()
+
+    # Use GPU if available
+    self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     self.history['loss'] = []
     self.history['w'] = []
@@ -170,7 +174,7 @@ class SRBM(nn.Module):
       with torch.no_grad():
         S_density = 0.5* torch.trace(data @ K_true @ data.t())/batch_size/self.n_v
         loss = self.free_energy(data) + S_density
-        loss_.append(loss.data)
+        loss_.append(loss.detach().numpy())
       
         if epoch == 0:
           K_inv = torch.linalg.inv(K_true)
@@ -195,24 +199,24 @@ class SRBM(nn.Module):
         self.eta += lr*deta
         self.m += lr*dm
     
-      self.loss = np.mean(loss_)
-      self.dw = dw
-      self.dm = dm
-      self.outstr = "epoch :%d "%(epoch)
-      if epoch % batch_size == 0:
-        if verbose:
-          ver_ = True
-        else:
-          ver_ = False
+        self.loss = np.mean(loss_)
+        self.dw = dw
+        self.dm = dm
+        self.outstr = "epoch :%d "%(epoch)
+        if epoch % batch_size == 0:
+          if verbose:
+            ver_ = True
+          else:
+            ver_ = False
 
-        if lr_decay:
-          lr *= lr_decay
+          if lr_decay:
+            lr *= lr_decay
+          
+          self.outstr += 'lr: %.5f '%(lr)  
         
-        self.outstr += 'lr: %.5f '%(lr)  
-      
-      self.history['S'].append(S_density.data.numpy())
-      self._historian(ver_)
-      ver_ = False
+        self.history['S'].append(S_density.detach().numpy())
+        self._historian(ver_)
+        ver_ = False
 
     return self.history
 
@@ -220,12 +224,12 @@ class SRBM(nn.Module):
     for epoch in range(epochs):
       loss_ = []
       for _, data in enumerate(train_dl):
-        data = Variable(data[0].view(-1,self.n_v))
+        data = Variable(data[0].view(-1,self.n_v)).to(self.device)
 
         p_v, v_, _, _, v = self.forward(data)
         S_density = self.free_energy(v_)
         loss = self.free_energy(v) - S_density
-        loss_.append(loss.data)
+        loss_.append(loss.detach().numpy())
 
         with torch.no_grad():
           dw_d, deta_d, dm_d = self.get_grad(v)
@@ -239,16 +243,17 @@ class SRBM(nn.Module):
           self.eta += lr*deta
           self.m += lr*dm
         
-      if lr_decay:
-        lr *= lr_decay
-            
-      self.loss = np.mean(loss_)
-      self.dw = dw
-      self.dm = dm
-      self.outstr = "epoch :%d "%(epoch)
-      self.outstr += 'lr: %.5f '%(lr)  
-      self.history['S'].append(S_density.data.numpy())
-      self._historian(verbose)
+      with torch.no_grad():
+        if lr_decay:
+          lr *= lr_decay
+              
+        self.loss = np.mean(loss_)
+        self.dw = dw
+        self.dm = dm
+        self.outstr = "epoch :%d "%(epoch)
+        self.outstr += 'lr: %.5f '%(lr)  
+        self.history['S'].append(S_density.detach().numpy())
+        self._historian(verbose)
 
     return self.history
 
@@ -298,11 +303,11 @@ class SRBM(nn.Module):
 
   def _historian(self, verbose=True):
     self.history['loss'].append(self.loss)
-    self.history['w'].append(self.w.data.numpy().copy())
-    self.history['m'].append(self.m.data.numpy().copy())
-    self.history['eta'].append(self.eta.data.numpy().copy())
-    self.history['dw'].append(self.dw.data.numpy().copy())
-    self.history['dm'].append(self.dm.data.numpy().copy())
+    self.history['w'].append(self.w.detach().numpy().copy())
+    self.history['m'].append(self.m.detach().numpy().copy())
+    self.history['eta'].append(self.eta.detach().numpy().copy())
+    self.history['dw'].append(self.dw.detach().numpy().copy())
+    self.history['dm'].append(self.dm.detach().numpy().copy())
     self.outstr += 'loss : %.5f'%(self.loss)
 
     if verbose:
@@ -310,5 +315,5 @@ class SRBM(nn.Module):
 
   def save(self, fpath):
     np.savez(fpath+'/'+self.name+'.npz', name=self.name, n_v=self.n_v, n_h=self.n_h, k=self.k,\
-            w=self.w.data.numpy(), m=self.m.data.numpy(), eta=self.eta.data.numpy(),\
+            w=self.w.detach().numpy(), m=self.m.detach().numpy(), eta=self.eta.detach().numpy(),\
             sig=self.sig, m_scheme=self.m_scheme, history=self.history, allow_pickle=True)
