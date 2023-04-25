@@ -163,7 +163,6 @@ class SRBM(nn.Module):
   def unsup_fit(self, K_true, S, epochs, lr, batch_size=64, verbose=True, lr_decay=0):
     data = torch.ones((batch_size, self.n_v))
     for epoch in range(epochs):
-      loss_ = []
       p_v, data, _, _, v = self.forward(data)
 
       #loss = self.free_energy(data) + S(data, 2.).mean()
@@ -174,7 +173,6 @@ class SRBM(nn.Module):
       with torch.no_grad():
         S_density = 0.5* torch.trace(data @ K_true @ data.t())/batch_size/self.n_v
         loss = self.free_energy(data) + S_density
-        loss_.append(loss.detach().numpy())
       
         if epoch == 0:
           K_inv = torch.linalg.inv(K_true)
@@ -199,7 +197,7 @@ class SRBM(nn.Module):
         self.eta += lr*deta
         self.m += lr*dm
     
-        self.loss = np.mean(loss_)
+        self.loss = torch.mean(loss_.detach()).cpu().numpy()
         self.dw = dw
         self.dm = dm
         self.outstr = "epoch :%d "%(epoch)
@@ -214,7 +212,7 @@ class SRBM(nn.Module):
           
           self.outstr += 'lr: %.5f '%(lr)  
         
-        self.history['S'].append(S_density.detach().numpy())
+        self.history['S'].append(S_density.detach().cpu().numpy())
         self._historian(ver_)
         ver_ = False
 
@@ -222,14 +220,13 @@ class SRBM(nn.Module):
 
   def fit(self, train_dl, epochs, lr, verbose=True, lr_decay=0):
     for epoch in range(epochs):
-      loss_ = []
-      for _, data in enumerate(train_dl):
+      loss_ = torch.empty(train_dl.batch_size)
+      for i, data in enumerate(train_dl):
         data = Variable(data[0].view(-1,self.n_v)).to(self.device)
 
         p_v, v_, _, _, v = self.forward(data)
         S_density = self.free_energy(v_)
-        loss = self.free_energy(v) - S_density
-        loss_.append(loss.detach().numpy())
+        loss_[i] = self.free_energy(v) - S_density
 
         with torch.no_grad():
           dw_d, deta_d, dm_d = self.get_grad(v)
@@ -247,12 +244,12 @@ class SRBM(nn.Module):
         if lr_decay:
           lr *= lr_decay
               
-        self.loss = np.mean(loss_)
+        self.loss = np.mean(loss_.detach().cpu().numpy())
         self.dw = dw
         self.dm = dm
         self.outstr = "epoch :%d "%(epoch)
         self.outstr += 'lr: %.5f '%(lr)  
-        self.history['S'].append(S_density.detach().numpy())
+        self.history['S'].append(S_density.detach().cpu().numpy())
         self._historian(verbose)
 
     return self.history
@@ -303,11 +300,11 @@ class SRBM(nn.Module):
 
   def _historian(self, verbose=True):
     self.history['loss'].append(self.loss)
-    self.history['w'].append(self.w.detach().numpy().copy())
-    self.history['m'].append(self.m.detach().numpy().copy())
-    self.history['eta'].append(self.eta.detach().numpy().copy())
-    self.history['dw'].append(self.dw.detach().numpy().copy())
-    self.history['dm'].append(self.dm.detach().numpy().copy())
+    self.history['w'].append(self.w.detach().cpu().numpy().copy())
+    self.history['m'].append(self.m.detach().cpu().numpy().copy())
+    self.history['eta'].append(self.eta.detach().cpu().numpy().copy())
+    self.history['dw'].append(self.dw.detach().cpu().numpy().copy())
+    self.history['dm'].append(self.dm.detach().cpu().numpy().copy())
     self.outstr += 'loss : %.5f'%(self.loss)
 
     if verbose:
