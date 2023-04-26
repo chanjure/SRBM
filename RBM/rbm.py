@@ -39,7 +39,7 @@ class SRBM(nn.Module):
     super(SRBM, self).__init__()
 
     # Use GPU if available
-    self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    self.device = torch.device("cuda:%d"%(torch.cuda.current_device()) if torch.cuda.is_available() else "cpu")
 
     self.history['loss'] = []
     self.history['w'] = []
