@@ -222,7 +222,7 @@ class SRBM(nn.Module):
     for epoch in range(epochs):
       loss_ = torch.empty((len(train_dl),train_dl.batch_size))
       for i, data in enumerate(train_dl):
-        data = Variable(data[0].view(-1,self.n_v)).to(self.device)
+        data = Variable(data[0].view(-1,self.n_v)).to(self.device, non_blocking=True)
 
         p_v, v_, _, _, v = self.forward(data)
         S_density = self.free_energy(v_)
