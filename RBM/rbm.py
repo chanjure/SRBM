@@ -145,10 +145,10 @@ class SRBM(nn.Module):
     elif self.m_scheme == 'global':
       dm = -self.m*(v.pow(2).sum(1)).mean(0)
     else:
-      dm = torch.zeros(self.n_v)
+      dm = torch.zeros(self.n_v).to(self.device)
 
     #deta = F.linear(v, self.w).mean(0)
-    deta = torch.zeros(self.n_h)
+    deta = torch.zeros(self.n_h).to(self.device)
 
     return dw, deta, dm
 
@@ -178,14 +178,14 @@ class SRBM(nn.Module):
           K_inv = torch.linalg.inv(K_true)
         
         dw_d = self.w @ K_inv
-        deta_d = torch.zeros(self.n_h)
+        deta_d = torch.zeros(self.n_h).to(self.device)
 
         if self.m_scheme == 'local':
           dm_d = -F.linear(self.m, K_inv)
         elif self.m_scheme == 'global':
           dm_d = -self.m*torch.trace(K_inv)
         else:
-          dm_d = torch.zeros(self.n_v)
+          dm_d = torch.zeros(self.n_v).to(self.device)
         
         dw_m, deta_m, dm_m = self.get_grad(data)
 
@@ -197,7 +197,7 @@ class SRBM(nn.Module):
         self.eta += lr*deta
         self.m += lr*dm
     
-        self.loss = torch.mean(loss_.detach()).cpu().numpy()
+        self.loss = torch.mean(loss.detach()).cpu().numpy()
         self.dw = dw
         self.dm = dm
         self.outstr = "epoch :%d "%(epoch)
@@ -220,7 +220,7 @@ class SRBM(nn.Module):
 
   def fit(self, train_dl, epochs, lr, verbose=True, lr_decay=0):
     for epoch in range(epochs):
-      loss_ = torch.empty(train_dl.batch_size)
+      loss_ = torch.empty((len(train_dl),train_dl.batch_size))
       for i, data in enumerate(train_dl):
         data = Variable(data[0].view(-1,self.n_v)).to(self.device)
 
