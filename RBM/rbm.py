@@ -109,6 +109,8 @@ class SRBM(nn.Module):
         self.sig = init_cond['sig']
       else:
         self.sig = 1.
+    
+    self.to(self.device)
 
   def sample_from_p(self, p, std):
     return torch.normal(p, std)
