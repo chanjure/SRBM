@@ -9,7 +9,7 @@ from torchvision import datasets, transforms
 def main(args):
 
     if torch.cuda.is_available():
-        torch.cuda.set_device(args.gpu)
+        torch.cuda.set_device(args.gpu_id)
 
     print("="*50)
     print("Get system info:")
@@ -29,7 +29,7 @@ def main(args):
     random.seed(args.seed)
     np.random.seed(args.seed)
 
-    device = torch.device('cuda:%d'%(args.gpu) if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:%d'%(args.gpu_id) if torch.cuda.is_available() else 'cpu')
     init_cond = {'w_sig':args.w_sig, 'm':args.m, 'sig':args.sig, 'm_scheme':args.m_scheme}
     rbm = RBM.SRBM(n_v=784, n_h=args.n_h, k=args.k, init_cond=init_cond)
     rbm.to(device)
