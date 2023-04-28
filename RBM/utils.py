@@ -3,9 +3,9 @@ from time import time
 import torch
 from torchvision import transforms
 
-def check_num_work(dataset, batch_size, verbose=False):
+def check_num_workers(dataset, batch_size, verbose=False):
     """
-    check_num_work
+    check_num_workers
     --------------
 
     Check the optimal number of workers for the dataloader.
@@ -45,4 +45,33 @@ def check_num_work(dataset, batch_size, verbose=False):
             print(f'num_workers: {num_workers}, duration: {duration}')
 
     return min(num_time, key=num_time.get)
+
+def S_1d(field, m):
+    """
+    S_1d
+    ------
+
+    Compute action density for 1 dimensional configuration.
+
+    Parameters
+    ----------
+    field: torch.Tensor
+        Field configurations.
+    m: float
+        Mass of the field.
+
+    Returns
+    -------
+    S: torch.Tensor
+        Action density.
+    """
+    n_data = field.shape[0]
+    N = field.shape[1]
+
+    s = m**2 * field**2
+    s += 2.*field**2
+    s -= field*torch.roll(field, shifts=-1, dims=1)
+    s -= field*torch.roll(field, shifts=1, dims=1)
+
+    return 0.5*s.sum()/n_data/N
 

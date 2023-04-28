@@ -34,12 +34,12 @@ class SRBM(nn.Module):
   history = {}
 
   def __init__(self, n_v=None, n_h=None, k=None, \
-			fixed=None, init_cond=None, \
+			fixed=None, init_cond=None, device='cpu', \
 			name='SRBM', load=False):
     super(SRBM, self).__init__()
 
     # Use GPU if available
-    self.device = torch.device("cuda:%d"%(torch.cuda.current_device()) if torch.cuda.is_available() else "cpu")
+    self.device = torch.device(device)
 
     self.history['loss'] = []
     self.history['w'] = []
@@ -140,9 +140,9 @@ class SRBM(nn.Module):
     dw = (self.sig**2 * F.linear(F.linear(v, self.w).t(), v.t()))/N \
         + torch.einsum('ij,k->ikj', v, self.eta).mean(0)
 		
-    if self.m_scheme == 'local':
+    if self.m_scheme == 2 or self.m_scheme == 'local':
       dm = (-v.pow(2)*self.m).mean(0)
-    elif self.m_scheme == 'global':
+    elif self.m_scheme == 1 or self.m_scheme == 'global':
       dm = -self.m*(v.pow(2).sum(1)).mean(0)
     else:
       dm = torch.zeros(self.n_v).to(self.device)
@@ -313,5 +313,6 @@ class SRBM(nn.Module):
 
   def save(self, fpath):
     np.savez(fpath+'/'+self.name+'.npz', name=self.name, n_v=self.n_v, n_h=self.n_h, k=self.k,\
-            w=self.w.detach().numpy(), m=self.m.detach().numpy(), eta=self.eta.detach().numpy(),\
-            sig=self.sig, m_scheme=self.m_scheme, history=self.history, allow_pickle=True)
+            w=self.w.detach().cpu().numpy(), m=self.m.detach().cpu().numpy(),\
+            eta=self.eta.detach().cpu().numpy(), sig=self.sig,\
+            m_scheme=self.m_scheme, history=self.history, allow_pickle=True)
