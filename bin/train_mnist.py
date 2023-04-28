@@ -10,7 +10,7 @@ def main(args):
 
     if torch.cuda.is_available():
         torch.cuda.set_device(args.gpu_id)
-        device_str = "gpu:%d"%(args.gpu_id)
+        device_str = "cuda:%d"%(args.gpu_id)
     else:
         device_str = "cpu"
 

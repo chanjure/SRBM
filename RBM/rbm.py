@@ -165,7 +165,7 @@ class SRBM(nn.Module):
   def unsup_fit(self, K_true, S, epochs, lr, batch_size=64, verbose=True, lr_decay=0):
     data = torch.ones((batch_size, self.n_v)).to(self.device)
     for epoch in range(epochs):
-      p_v, data, _, _, v = self.forward(data)
+      p_v, data, _, _, v = self.forward(data.detach())
 
       #loss = self.free_energy(data) + S(data, 2.).mean()
       #loss = -S(data, 2.).mean()
@@ -173,7 +173,6 @@ class SRBM(nn.Module):
       #        = free_energy + phi K_true phi
 
       with torch.no_grad():
-        data = data.detach()
         S_density = 0.5* torch.trace(data @ K_true @ data.t())/batch_size/self.n_v
         loss = self.free_energy(data) + S_density
       
