@@ -57,7 +57,7 @@ def main(args):
     print("Training finished!")
 
     print("Saving model %s"%(args.model_path+rbm.name))
-    rbm.save_model(args.model_path)
+    rbm.save(args.model_path)
     print("Model saved!")
 
 if __name__ == '__main__':
