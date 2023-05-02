@@ -163,7 +163,16 @@ class SRBM(nn.Module):
     return (mass_term + kin_term + bias_term).mean()/self.n_v
   
   def unsup_fit(self, K_true, S, epochs, lr, batch_size=64, verbose=True, lr_decay=0):
+    # Allocate history arrays
+    self.history['loss'] = np.empty(epochs)
+    self.history['w'] = np.empty((epochs, self.n_h, self.n_v))
+    self.history['m'] = np.empty((epochs, self.n_v))
+    self.history['eta'] = np.empty((epochs, self.n_h))
+    self.history['dw'] = np.empty((epochs, self.n_h, self.n_v))
+    self.history['dm'] = np.empty((epochs, self.n_v))
+    
     data = torch.ones((batch_size, self.n_v)).to(self.device)
+
     for epoch in range(epochs):
       p_v, data, _, _, v = self.forward(data.detach())
 
@@ -215,12 +224,20 @@ class SRBM(nn.Module):
           self.outstr += 'lr: %.5f '%(lr)  
         
         self.history['S'].append(S_density.detach().cpu().numpy())
-        self._historian(ver_)
+        self._historian(epoch, ver_)
         ver_ = False
 
     return self.history
 
   def fit(self, train_dl, epochs, lr, verbose=True, lr_decay=0):
+    # Allocate history arrays
+    self.history['loss'] = np.empty(epochs)
+    self.history['w'] = np.empty((epochs, self.n_h, self.n_v))
+    self.history['m'] = np.empty((epochs, self.n_v))
+    self.history['eta'] = np.empty((epochs, self.n_h))
+    self.history['dw'] = np.empty((epochs, self.n_h, self.n_v))
+    self.history['dm'] = np.empty((epochs, self.n_v))
+    
     for epoch in range(epochs):
       loss_ = torch.empty((len(train_dl),train_dl.batch_size))
       for i, data in enumerate(train_dl):
@@ -251,8 +268,7 @@ class SRBM(nn.Module):
         self.dm = dm
         self.outstr = "epoch :%d "%(epoch)
         self.outstr += 'lr: %.5f '%(lr)  
-        self.history['S'].append(S_density.detach().cpu().numpy())
-        self._historian(verbose)
+        self._historian(epoch, verbose)
 
     return self.history
 
@@ -300,13 +316,13 @@ class SRBM(nn.Module):
     plt.show()
     plt.clf()
 
-  def _historian(self, verbose=True):
-    self.history['loss'].append(self.loss)
-    self.history['w'].append(self.w.detach().cpu().numpy().copy())
-    self.history['m'].append(self.m.detach().cpu().numpy().copy())
-    self.history['eta'].append(self.eta.detach().cpu().numpy().copy())
-    self.history['dw'].append(self.dw.detach().cpu().numpy().copy())
-    self.history['dm'].append(self.dm.detach().cpu().numpy().copy())
+  def _historian(self, idx, verbose=True):
+    self.history['loss'][idx] = self.loss
+    self.history['w'][idx] = self.w.detach().cpu().numpy().copy()
+    self.history['m'][idx] = self.m.detach().cpu().numpy().copy()
+    self.history['eta'][idx] = self.eta.detach().cpu().numpy().copy()
+    self.history['dw'][idx] = self.dw.detach().cpu().numpy().copy()
+    self.history['dm'][idx] = self.dm.detach().cpu().numpy().copy()
     self.outstr += 'loss : %.5f'%(self.loss)
 
     if verbose:
