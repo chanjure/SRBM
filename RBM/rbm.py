@@ -54,6 +54,8 @@ class SRBM(nn.Module):
     if load:
       print("Loading model from "+load)
       mz = np.load(load, allow_pickle=True)
+
+      self.device = torch.device(device)
       
       self.name=mz['name'].item()
 
