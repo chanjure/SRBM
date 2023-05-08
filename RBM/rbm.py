@@ -164,7 +164,7 @@ class SRBM(nn.Module):
     bias_term = F.linear(self.eta, phi_w)
     return (mass_term + kin_term + bias_term).mean()/self.n_v
   
-  def unsup_fit(self, K_true, S, epochs, lr, batch_size=64, verbose=True, lr_decay=0):
+  def unsup_fit(self, K_true, S, epochs, lr, beta=0., l2=0, batch_size=64, mode='K', verbose=True, lr_decay=0):
     # Allocate history arrays
     self.history['loss'] = np.empty(epochs)
     self.history['w'] = np.empty((epochs, self.n_h, self.n_v))
@@ -172,6 +172,8 @@ class SRBM(nn.Module):
     self.history['eta'] = np.empty((epochs, self.n_h))
     self.history['dw'] = np.empty((epochs, self.n_h, self.n_v))
     self.history['dm'] = np.empty((epochs, self.n_v))
+
+    momentum = torch.zeros(self.n_h, self.n_v).to(self.device)
     
     data = torch.ones((batch_size, self.n_v)).to(self.device)
 
@@ -184,11 +186,16 @@ class SRBM(nn.Module):
       #        = free_energy + phi K_true phi
 
       with torch.no_grad():
-        S_density = 0.5* torch.trace(data @ K_true @ data.t())/batch_size/self.n_v
+        if mode=='K':
+          S_density = 0.5* torch.trace(data @ K_true @ data.t())/batch_size/self.n_v
+          if epoch == 0:
+            K_inv = torch.linalg.inv(K_true)
+        elif mode=='C':
+          S_density = 0.
+          if epoch == 0:
+            K_inv = K
         loss = self.free_energy(data) + S_density
       
-        if epoch == 0:
-          K_inv = torch.linalg.inv(K_true)
         
         dw_d = self.w @ K_inv
         deta_d = torch.zeros(self.n_h).to(self.device)
@@ -206,7 +213,10 @@ class SRBM(nn.Module):
         deta = deta_d - deta_m
         dm = dm_d - dm_m
 
-        self.w += lr*dw
+        momentum = beta*momentum + (1-beta)*dw
+        L2 = l2*self.w
+
+        self.w += lr*momentum - lr*L2
         self.eta += lr*deta
         self.m += lr*dm
     
@@ -231,7 +241,7 @@ class SRBM(nn.Module):
 
     return self.history
 
-  def fit(self, train_dl, epochs, lr, verbose=True, lr_decay=0):
+  def fit(self, train_dl, epochs, lr, beta=0., l2=0., verbose=True, lr_decay=0):
     # Allocate history arrays
     self.history['loss'] = np.empty(epochs)
     self.history['w'] = np.empty((epochs, self.n_h, self.n_v))
@@ -239,6 +249,8 @@ class SRBM(nn.Module):
     self.history['eta'] = np.empty((epochs, self.n_h))
     self.history['dw'] = np.empty((epochs, self.n_h, self.n_v))
     self.history['dm'] = np.empty((epochs, self.n_v))
+
+    momentum = torch.zeros(self.n_h, self.n_v).to(self.device)
     
     for epoch in range(epochs):
       loss_ = torch.empty((len(train_dl),train_dl.batch_size))
@@ -257,7 +269,10 @@ class SRBM(nn.Module):
           deta = deta_d - deta_m
           dm = dm_d - dm_m
 
-          self.w += lr*dw
+          momentum = beta*momentum + (1. - beta)*dw  
+          L2 = l2*self.w
+          
+          self.w += lr*momentum - lr*L2
           self.eta += lr*deta
           self.m += lr*dm
         

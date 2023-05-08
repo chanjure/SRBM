@@ -93,7 +93,7 @@ def test_scale(m_scheme):
     K_phi_tc = torch.DoubleTensor(K_phi)
 
     history = rbm.unsup_fit(K_phi_tc, S_fast,\
-            epochs=epochs, lr=lr, batch_size=batch_size,\
+            epochs=epochs, lr=lr, beta=0.5, l2=1e-1, batch_size=batch_size,\
             verbose=True, lr_decay=0.99)
 
     Zk, b, r, K = get_scale(rbm)
