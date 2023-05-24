@@ -235,7 +235,6 @@ class SRBM(nn.Module):
           
           self.outstr += 'lr: %.5f '%(lr)  
         
-        self.history['S'].append(S_density.detach().cpu().numpy())
         self._historian(epoch, ver_)
         ver_ = False
 
