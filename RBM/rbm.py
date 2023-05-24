@@ -193,7 +193,7 @@ class SRBM(nn.Module):
         elif mode=='C':
           S_density = 0.
           if epoch == 0:
-            K_inv = K
+            K_inv = K_true
         loss = self.free_energy(data) + S_density
       
         
