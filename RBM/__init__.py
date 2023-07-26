@@ -1,5 +1,5 @@
 # Test features
-from .test import *
+#from .test import *
 
 # Core module
 from .rbm import *
