@@ -32,6 +32,7 @@ class SRBM(nn.Module):
   """
   name = ''
   history = {}
+  train_config = {}
 
   def __init__(self, n_v=None, n_h=None, k=None, \
 			fixed=None, init_cond=None, device='cpu', \
@@ -70,6 +71,11 @@ class SRBM(nn.Module):
       
       self.m_scheme = mz['m_scheme'].item()
       self.history = mz['history'].item()
+      
+      try: # For backward compatibility
+        self.train_config = mz['train_config'].item()
+      except:
+        pass
 
     else:
       time_tag = time.strftime("%y%m%d_%H%M%S", time.gmtime())
@@ -164,14 +170,15 @@ class SRBM(nn.Module):
     bias_term = F.linear(self.eta, phi_w)
     return (mass_term + kin_term + bias_term).mean()/self.n_v
   
-  def unsup_fit(self, K_true, epochs, lr, beta=0., l2=0, batch_size=64, mode='K', verbose=True, lr_decay=0, save_interval=500):
+  def unsup_fit(self, K_true, epochs, lr, beta=0., l2=0, batch_size=64, mode='K', verbose=True, lr_decay=0, save_int=500):
     # Allocate history arrays
-    self.history['loss'] = np.empty(epochs//save_interval + 1)
-    self.history['w'] = np.empty((epochs//save_interval + 1, self.n_h, self.n_v))
-    self.history['m'] = np.empty((epochs//save_interval + 1, self.n_v))
-    self.history['eta'] = np.empty((epochs//save_interval + 1, self.n_h))
-    self.history['dw'] = np.empty((epochs//save_interval + 1, self.n_h, self.n_v))
-    self.history['dm'] = np.empty((epochs//save_interval + 1, self.n_v))
+    self.history['loss'] = np.empty(epochs//save_int + 1)
+    self.history['w'] = np.empty((epochs//save_int + 1, self.n_h, self.n_v))
+    self.history['m'] = np.empty((epochs//save_int + 1, self.n_v))
+    self.history['eta'] = np.empty((epochs//save_int + 1, self.n_h))
+    self.history['dw'] = np.empty((epochs//save_int + 1, self.n_h, self.n_v))
+    self.history['dm'] = np.empty((epochs//save_int + 1, self.n_v))
+    self.train_config = {'lr': lr, 'beta': beta, 'l2': l2, 'batch_size': batch_size, 'mode': mode, 'lr_decay': lr_decay, 'save_int': save_int}
 
     momentum = torch.zeros(self.n_h, self.n_v).to(self.device)
     momentum_m = torch.zeros(self.n_v).to(self.device)
@@ -225,9 +232,9 @@ class SRBM(nn.Module):
           if lr_decay:
             lr *= lr_decay
           
-        if epoch % save_interval == 0 or epoch == 0:
+        if epoch % save_int == 0 or epoch == 0:
           self.outstr += 'lr: %.5f '%(lr)  
-          self._historian(epoch//save_interval, verbose)
+          self._historian(epoch//save_int, verbose)
         
         self.w += lr*momentum - lr*L2
         self.eta += lr*deta
@@ -250,6 +257,7 @@ class SRBM(nn.Module):
     self.history['eta'] = np.empty((epochs//save_int+1, self.n_h))
     self.history['dw'] = np.empty((epochs//save_int+1, self.n_h, self.n_v))
     self.history['dm'] = np.empty((epochs//save_int+1, self.n_v))
+    self.train_config = {'lr': lr, 'beta': beta, 'l2': l2, 'lr_decay': lr_decay, 'save_int': save_int}
 
     momentum = torch.zeros(self.n_h, self.n_v).to(self.device)
     
@@ -360,4 +368,5 @@ class SRBM(nn.Module):
     np.savez(fpath+'/'+self.name+'.npz', name=self.name, n_v=self.n_v, n_h=self.n_h, k=self.k,\
             w=self.w.detach().cpu().numpy(), m=self.m.detach().cpu().numpy(),\
             eta=self.eta.detach().cpu().numpy(), sig=self.sig,\
-            m_scheme=self.m_scheme, history=self.history, allow_pickle=True)
+            m_scheme=self.m_scheme, history=self.history, train_config=self.train_config,\
+            allow_pickle=True)
