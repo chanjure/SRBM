@@ -178,7 +178,7 @@ class SRBM(nn.Module):
     self.history['eta'] = np.empty((epochs//save_int + 1, self.n_h))
     self.history['dw'] = np.empty((epochs//save_int + 1, self.n_h, self.n_v))
     self.history['dm'] = np.empty((epochs//save_int + 1, self.n_v))
-    self.train_config = {'lr': lr, 'beta': beta, 'l2': l2, 'batch_size': batch_size, 'mode': mode, 'lr_decay': lr_decay, 'save_int': save_int}
+    self.train_config = {'lr': lr, 'beta': beta, 'l2': l2, 'batch_size': batch_size, 'mode': mode, 'lr_decay': lr_decay, 'save_int': save_int, 'epochs':epochs}
 
     momentum = torch.zeros(self.n_h, self.n_v).to(self.device)
     momentum_m = torch.zeros(self.n_v).to(self.device)
@@ -257,7 +257,7 @@ class SRBM(nn.Module):
     self.history['eta'] = np.empty((epochs//save_int+1, self.n_h))
     self.history['dw'] = np.empty((epochs//save_int+1, self.n_h, self.n_v))
     self.history['dm'] = np.empty((epochs//save_int+1, self.n_v))
-    self.train_config = {'lr': lr, 'beta': beta, 'l2': l2, 'lr_decay': lr_decay, 'save_int': save_int}
+    self.train_config = {'lr': lr, 'beta': beta, 'l2': l2, 'lr_decay': lr_decay, 'save_int': save_int, 'epochs': epochs}
 
     momentum = torch.zeros(self.n_h, self.n_v).to(self.device)
     
