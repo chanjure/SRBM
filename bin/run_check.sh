@@ -1,10 +1,10 @@
-jupyter nbconvert --to notebook --execute notebook/SRBM_unsup_gen.ipynb
-mv notebook/SRBM_unsup_gen.nbconvert.ipynb notebook/SRBM_unsup_gen.ipynb
-nbstripout notebook/SRBM_unsup_gen.ipynb
+jupyter nbconvert --to notebook --execute notebook/SRBM_supervised.ipynb
+mv notebook/SRBM_supervised.nbconvert.ipynb notebook/SRBM_supervised.ipynb
+nbstripout notebook/SRBM_supervised.ipynb
 
-jupyter nbconvert --to notebook --execute notebook/SRBM_sup_gen_scalar_field.ipynb
-mv notebook/SRBM_sup_gen_scalar_field.nbconvert.ipynb notebook/SRBM_sup_gen_scalar_field.ipynb
-nbstripout notebook/SRBM_sup_gen_scalar_field.ipynb
+jupyter nbconvert --to notebook --execute notebook/SRBM_unsupervised.ipynb
+mv notebook/SRBM_unsupervised.nbconvert.ipynb notebook/SRBM_unsupervised.ipynb
+nbstripout notebook/SRBM_unsupervised.ipynb
 
 jupyter nbconvert --to notebook --execute notebook/SRBM_sup_gen_MNIST.ipynb
 mv notebook/SRBM_sup_gen_MNIST.nbconvert.ipynb notebook/SRBM_sup_gen_MNIST.ipynb

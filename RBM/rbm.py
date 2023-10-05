@@ -250,6 +250,7 @@ class SRBM(nn.Module):
     return self.history
 
   def fit(self, train_dl, epochs, lr, beta=0., l2=0., verbose=True, lr_decay=0, save_int=500):
+    # Need modification. Plots in the paper were trained using pcd with unsup_fit method
     # Allocate history arrays
     self.history['loss'] = np.empty(epochs//save_int+1)
     self.history['w'] = np.empty((epochs//save_int+1, self.n_h, self.n_v))
@@ -260,18 +261,23 @@ class SRBM(nn.Module):
     self.train_config = {'lr': lr, 'beta': beta, 'l2': l2, 'lr_decay': lr_decay, 'save_int': save_int, 'epochs': epochs}
 
     momentum = torch.zeros(self.n_h, self.n_v).to(self.device)
-    
-    for epoch in range(epochs):
-      loss_ = torch.empty((len(train_dl),train_dl.batch_size))
-      for i, data in enumerate(train_dl):
-        data = Variable(data[0].view(-1,self.n_v)).to(self.device, non_blocking=True)
 
-        p_v, v_, _, _, v = self.forward(data)
+    batch_size = train_dl.batch_size
+    data = torch.empty((len(train_dl), batch_size, self.n_v)).to(self.device)
+
+    for epoch in range(epochs):
+      loss_ = torch.empty(len(train_dl))
+      for i, dt in enumerate(train_dl):
+        if epoch != 0:
+            p_v, v_, _, _, data[i] = self.forward(data[i]) # PCD
+        else:
+            p_v, v_, _, _, data[i] = self.forward(dt[0].view(-1, self.n_v))
+
         S_density = self.free_energy(v_)
-        loss_[i] = self.free_energy(v) - S_density
+        loss_[i] = self.free_energy(data[i]) - S_density # Batch mean
 
         with torch.no_grad():
-          dw_d, deta_d, dm_d = self.get_grad(v)
+          dw_d, deta_d, dm_d = self.get_grad(data[i])
           dw_m, deta_m, dm_m = self.get_grad(v_)
 
           dw = dw_d - dw_m
@@ -280,6 +286,10 @@ class SRBM(nn.Module):
 
           momentum = beta*momentum + (1. - beta)*dw  
           L2 = l2*self.w
+         
+          self.w += lr*momentum - lr*L2
+          self.eta += lr*deta
+          self.m += lr*dm
           
       with torch.no_grad():
         if epoch % train_dl.batch_size == 0:
@@ -292,11 +302,7 @@ class SRBM(nn.Module):
           self.dm = dm
           self.outstr = "epoch :%d "%(epoch)
           self.outstr += 'lr: %.5f '%(lr)  
-          self._historian(epoch//save_int, verbose)
-        
-        self.w += lr*momentum - lr*L2
-        self.eta += lr*deta
-        self.m += lr*dm
+          self._historian(epoch//save_int, verbose)  
         
     with torch.no_grad():
       self.loss = np.mean(loss_.detach().cpu().numpy())
