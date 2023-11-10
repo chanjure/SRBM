@@ -225,6 +225,8 @@ class SRBM(nn.Module):
         L2 = l2*self.w
 
         self.loss = torch.mean(loss_.detach()).cpu().numpy()
+        if str(self.loss) == 'nan':
+            raise ValueError('Loss is nan')
         self.dw = dw
         self.dm = dm
         self.outstr = "epoch :%d "%(epoch)
@@ -298,6 +300,8 @@ class SRBM(nn.Module):
                   
         if epoch % save_int == 0 or epoch == 0:
           self.loss = np.mean(loss_.detach().cpu().numpy())
+          if str(self.loss) == 'nan':
+              raise ValueError('Loss is nan')
           self.dw = dw
           self.dm = dm
           self.outstr = "epoch :%d "%(epoch)
