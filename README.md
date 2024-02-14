@@ -5,6 +5,7 @@
 
 [![Run tests](https://github.com/chanjure/SRBM/actions/workflows/pytest.yaml/badge.svg?event=push)](https://github.com/chanjure/SRBM/actions/workflows/pytest.yaml)
 [![codecov](https://codecov.io/gh/chanjure/SRBM/branch/main/graph/badge.svg?token=2KRU5F0ERW)](https://codecov.io/gh/chanjure/SRBM)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10658564.svg)](https://doi.org/10.5281/zenodo.10658564)
 
 ## Usage
 run:
